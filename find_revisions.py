@@ -53,7 +53,8 @@ In questo modo calcoliamo una sola volta i punteggi delle revisioni degli utenti
 Se vi vengono in mente idee migliori magariii!!!
 """
 
-users_dict = {} #contiene come chiavi i nomi degli utenti e come attributi ogni utente ha una lista con i punteggi ottenuti dalle revisioni
+users_dict = {}  # contiene come chiavi i nomi degli utenti e come attributi ogni utente ha una lista con i punteggi ottenuti dalle revisioni
+
 
 def calculate_no_change_score(line):
     # questa deve calcolare se la linea che non è stata toccata era una linea con del contenuto di valore o meno
@@ -61,15 +62,15 @@ def calculate_no_change_score(line):
     # vuol dire che il testo probabilmente era buono e quindi si otterà un punteggio alto
     # al contrario se la linea non conteneva contenuto utile(ad esempio uno spazio o andata a capo) non si ottiene punteggio aggiuntivo
     text = line['text']
-    
     return math.log(1 + len(text))
+
 
 def calculate_deletion_score(line):
     # questa calcola quanto va penalizzato il contenuto della linea che è stato cancellato. più la linea era grande e conteneva testo, più il peso
     # della penalità sarà grande perchè vuol dire che tutta la quantità di contenuto scritto non è stata ritenuta buona
     text = line['text']
-    
     return math.log(1 + len(text))
+
 
 def calculate_modification_score(line):
     # Questa calcola la penalità da attribuire alla linea. In base al tipo di contenuto modificato si applicano delle penalità diverse
@@ -78,133 +79,102 @@ def calculate_modification_score(line):
     results = []
     diffs = line['highlightRanges']
     score = 0
-
     for diff in diffs:
-        if diff['type'] == 1: #vuol dire che è stato rimosso del contenuto
-            score -= math.log(1 + diff['length']) # penalizzo in base alla lunghezza del contenuto rimosso
-
+        if diff['type'] == 1:  # vuol dire che è stato rimosso del contenuto
+            # penalizzo in base alla lunghezza del contenuto rimosso
+            score -= math.log(1 + diff['length'])
         else:
-            score += 1 # è stato solo aggiunto del contenuto, quindi quello scritto precedentemente era ritenuto abbastanza buono   
-
+            score += 1  # è stato solo aggiunto del contenuto, quindi quello scritto precedentemente era ritenuto abbastanza buono
     return 0
 
+
 def check_differences(old_rev, new_rev, user_id):
-    
     url = 'https://en.wikipedia.org/w/rest.php/v1/revision/{old}/compare/{new}'
     url = url.format(old=old_rev, new=new_rev)
-    headers = {'User-Agent': 'MediaWiki REST API docs examples/0.1 (https://www.mediawiki.org/wiki/API_talk:REST_API)'}
-
+    headers = {
+        'User-Agent': 'MediaWiki REST API docs examples/0.1 (https://www.mediawiki.org/wiki/API_talk:REST_API)'}
     response = requests.get(url, headers=headers)
     data = response.json()
-
     differences = data['diff']
     review_score = 0
-
     for diff in differences:
-        if diff['type'] == 0: #la linea è rimasta la stessa nella nuova revisione, quindi FORSE era buona
+        if diff['type'] == 0:  # la linea è rimasta la stessa nella nuova revisione, quindi FORSE era buona
             review_score += calculate_no_change_score(diff)
-        
-        elif diff['type'] == 2: #la linea è stata cancellata quindi FORSE non era una buona linea
+        elif diff['type'] == 2:  # la linea è stata cancellata quindi FORSE non era una buona linea
             review_score -= calculate_deletion_score(diff)
-        
-        elif diff['type'] == 3: # linea modificata
+        elif diff['type'] == 3:  # linea modificata
             review_score -= calculate_modification_score(diff)
-    
     if user_id in users_dict:
         users_dict[user_id].append(review_score)
-
-    else: 
+    else:
         users_dict[user_id] = [review_score]
 
 
+if __name__ == "__main__":
+    # open the file with the list of all the names of the countries
+    f = open("list_of_countries", "r")
+    names = f.readlines()
+    f.close()
 
-    
-
-
-
-
-
-
-# open the file with the list of all the names of the countries
-
-f = open("list_of_countries", "r")
-names = f.readlines()
-f.close()
-
-
-page = ""
-f = open("user_scores", "w")
-for name in names:
-
-    
-    page = name.strip('\n') 
-    print("Processing " + page)
-    print("\n")
-    f.write("COUNTRY: "+ page)
-    f.write("\n")
-
-    # get the history of the page
-
-    url = 'https://en.wikipedia.org/w/rest.php/v1/page/{page_name}/history'
-    url = url.format(page_name = page)
-
-    headers = {'User-Agent': 'MediaWiki REST API docs examples/0.1 (https://meta.wikimedia.org/wiki/User:APaskulin_(WMF))'}
-    revisions_list = []
-
-    # call the api to get the history of the page
-    response = requests.get(url, headers=headers)
-    response = json.loads(response.text)
-    revisions_list += response['revisions']
-
-    try:
-        for i in range(10): #accumula le ultime 20 * 10 revisioni
-            response = requests.get(response['older'], headers = headers)
-            response = json.loads(response.text)
-            revisions_list += response['revisions']
-    except:
-        pass
-
-
-
-    # itero in ordine inverso per confrontare ogni review con la sua successiva e vedere quali cambiamenti sono stati fatti
-
-    i = len(revisions_list) -1
-
-    while i > 0:
-        
-        try:
-            if (revisions_list[i]['minor'] != True):
-                old_rev = revisions_list[i]['id']
-                new_rev = revisions_list[i-1]['id']
-                user_id = revisions_list[i]['user']['id']
-                user_name = revisions_list[i]['user']['name']
-                if (user_id != revisions_list[i-1]['user']['id'] and "bot" not in user_name): #solo se la prossima review non è fatta da se stesso
-                    check_differences(old_rev, new_rev, user_id)
-        except:
-            pass
-        
-        i = i -1
-    
-    for user in users_dict:
-        try:
-            f.write("User ID:  " + str(user))
-            f.write("  ")
-            f.write("Scores:  ")
-            for score in users_dict[user]:
-                f.write(str(score))
-                f.write("; ")
-            
-        except:
-            pass
-
-
+    page = ""
+    f = open("user_scores", "w")
+    for name in names:
+        page = name.strip('\n')
+        print("Processing " + page)
+        print("\n")
+        f.write("COUNTRY: " + page)
         f.write("\n")
-    
-    f.write("\n")
-    f.write("\n")
 
-    users_dict = {}
-    
+        # get the history of the page
 
+        url = 'https://en.wikipedia.org/w/rest.php/v1/page/{page_name}/history'
+        url = url.format(page_name=page)
 
-f.close()
+        headers = {
+            'User-Agent': 'MediaWiki REST API docs examples/0.1 (https://meta.wikimedia.org/wiki/User:APaskulin_(WMF))'}
+        revisions_list = []
+
+        # call the api to get the history of the page
+        response = requests.get(url, headers=headers)
+        response = json.loads(response.text)
+        revisions_list += response['revisions']
+
+        try:
+            for i in range(10):  # accumula le ultime 20 * 10 revisioni
+                response = requests.get(response['older'], headers=headers)
+                response = json.loads(response.text)
+                revisions_list += response['revisions']
+        except:
+            pass
+
+        # itero in ordine inverso per confrontare ogni review con la sua successiva e vedere quali cambiamenti sono stati fatti
+        i = len(revisions_list) - 1
+        while i > 0:
+            try:
+                if (revisions_list[i]['minor'] != True):
+                    old_rev = revisions_list[i]['id']
+                    new_rev = revisions_list[i-1]['id']
+                    user_id = revisions_list[i]['user']['id']
+                    user_name = revisions_list[i]['user']['name']
+                    # solo se la prossima review non è fatta da se stesso
+                    if (user_id != revisions_list[i-1]['user']['id'] and "bot" not in user_name):
+                        check_differences(old_rev, new_rev, user_id)
+            except:
+                pass
+            i = i - 1
+
+        for user in users_dict:
+            try:
+                f.write("User ID:  " + str(user))
+                f.write("  ")
+                f.write("Scores:  ")
+                for score in users_dict[user]:
+                    f.write(str(score))
+                    f.write("; ")
+            except:
+                pass
+            f.write("\n")
+        f.write("\n")
+        f.write("\n")
+        users_dict = {}
+    f.close()
