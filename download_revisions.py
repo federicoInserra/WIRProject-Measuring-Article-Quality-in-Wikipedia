@@ -30,14 +30,20 @@ if __name__ == "__main__":
 
 import pywikibot
 import pypandoc
+from pathlib import Path
 
 if __name__ == "__main__":
+    country = "Italy"
     site = pywikibot.Site('en', 'wikipedia')
-    page = pywikibot.Page(site, "Italy")
+    page = pywikibot.Page(site, country)
     revs = page.revisions(content=True, total=1)
-    out_file = open("italy.html", "w")
+    Path("countries").mkdir(parents=True, exist_ok=True)
+    html_out_file = open(f"countries/{country.lower()}.html", "w")
+    wiki_out_file = open(f"countries/{country.lower()}.wiki", "w")
     for rev in revs:
+        wiki_out_file.writelines(rev.text)
         output = pypandoc.convert_text(
             rev.text, format="mediawiki", to="html5")
-        out_file.writelines(output)
-    out_file.close()
+        html_out_file.writelines(output)
+    html_out_file.close()
+    wiki_out_file.close()

@@ -2,5 +2,5 @@
     "python.linting.pylintEnabled": false,
     "python.linting.mypyEnabled": true,
     "python.linting.enabled": true,
-    "python.pythonPath": "c:\\Users\\Federico\\Desktop\\WIRRepo\\WIRProject-Measuring-Article-Quality-in-Wikipedia\\env\\Scripts\\python.exe"
+    "python.pythonPath": "/home/lrazovic/projects/python/.env/bin/python"
 }
