@@ -1,4 +1,3 @@
-from mwclient import Site
 import requests
 import json
 import math
@@ -88,7 +87,7 @@ def calculate_modification_score(line):
     return 0
 
 
-def check_differences(old_rev, new_rev, user_id):
+def check_differences(old_rev, new_rev, user_id, user_rev):
     url = 'https://en.wikipedia.org/w/rest.php/v1/revision/{old}/compare/{new}'
     url = url.format(old=old_rev, new=new_rev)
     headers = {
@@ -105,25 +104,33 @@ def check_differences(old_rev, new_rev, user_id):
         elif diff['type'] == 3:  # linea modificata
             review_score -= calculate_modification_score(diff)
     if user_id in users_dict:
-        users_dict[user_id].append(review_score)
+        users_dict[user_id].append((review_score, user_rev))
     else:
-        users_dict[user_id] = [review_score]
+        users_dict[user_id] = [(review_score, user_rev)]
+
+def save_as_json(filename, json_object):
+    out_file = open(f"{filename}.json", "w", encoding='utf-8')
+    # Dump the dictionary as JSON object in the file
+    json.dump(json_object, out_file, indent=2,
+              sort_keys=False,  ensure_ascii=False)
+    # Close the output file
+    out_file.close()
 
 
 if __name__ == "__main__":
     # open the file with the list of all the names of the countries
-    f = open("list_of_countries", "r")
+    f = open("list_of_countries.txt", "r")
     names = f.readlines()
     f.close()
 
     page = ""
-    f = open("user_scores", "w")
+    json_object = {}
+    count = 0
     for name in names:
         page = name.strip('\n')
         print("Processing " + page)
         print("\n")
-        f.write("COUNTRY: " + page)
-        f.write("\n")
+        
 
         # get the history of the page
 
@@ -140,7 +147,7 @@ if __name__ == "__main__":
         revisions_list += response['revisions']
 
         try:
-            for i in range(10):  # accumula le ultime 20 * 10 revisioni
+            for i in range(20):  # accumula le ultime 20 * 10 revisioni
                 response = requests.get(response['older'], headers=headers)
                 response = json.loads(response.text)
                 revisions_list += response['revisions']
@@ -158,23 +165,18 @@ if __name__ == "__main__":
                     user_name = revisions_list[i]['user']['name']
                     # solo se la prossima review non è fatta da se stesso
                     if (user_id != revisions_list[i-1]['user']['id'] and "bot" not in user_name):
-                        check_differences(old_rev, new_rev, user_id)
+                        check_differences(old_rev, new_rev, user_id, revisions_list[i-1]['user']['id'] )
             except:
                 pass
             i = i - 1
 
-        for user in users_dict:
-            try:
-                f.write("User ID:  " + str(user))
-                f.write("  ")
-                f.write("Scores:  ")
-                for score in users_dict[user]:
-                    f.write(str(score))
-                    f.write("; ")
-            except:
-                pass
-            f.write("\n")
-        f.write("\n")
-        f.write("\n")
+
+        json_object[name] = users_dict
         users_dict = {}
-    f.close()
+        count += 1
+        if count > 9:
+            break
+        
+
+        
+    save_as_json("users_scores", json_object)
