@@ -42,12 +42,10 @@ def convert_to_json(filename):
 
 
 def save_as_json(filename, json_object):
-    out_file = open(f"{filename}.json", "w", encoding='utf-8')
-    # Dump the dictionary as JSON object in the file
-    json.dump(json_object, out_file, indent=2,
-              sort_keys=False,  ensure_ascii=False)
-    # Close the output file
-    out_file.close()
+    with open(f"{filename}.json", "w", encoding='utf-8') as out_file:
+        # Dump the dictionary as JSON object in the file
+        json.dump(json_object, out_file, indent=2,
+                  sort_keys=False,  ensure_ascii=False)
 
 
 def save_as_csv(filename):
