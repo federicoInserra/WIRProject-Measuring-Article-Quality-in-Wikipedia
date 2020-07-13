@@ -1,0 +1,5 @@
+.mypy_cache
+apicache-py3
+*.ctrl
+*.lwp
+.vscode/settings.json
