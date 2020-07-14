@@ -12,9 +12,9 @@ if __name__ == "__main__":
     with open("countries/italy.html", "r") as html:
         text = html.read().strip()
     # Remove latest notes
-    text = text.split("<h2 id=\"see_also\">See also</h2>")[0]
-    clean = re.compile('<.*?>')
-    clean = re.sub(clean, '', text.strip())
+    text = text.split('<h2 id="see_also">See also</h2>')[0]
+    clean = re.compile("<.*?>")
+    clean = re.sub(clean, "", text.strip())
     # Save the plaintext version of the Wikipedia page
     save_to_plaintext(clean)
     # Load SpaCy
