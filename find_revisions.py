@@ -52,7 +52,9 @@ In questo modo calcoliamo una sola volta i punteggi delle revisioni degli utenti
 Se vi vengono in mente idee migliori magariii!!!
 """
 
-users_dict = {}  # contiene come chiavi i nomi degli utenti e come attributi ogni utente ha una lista con i punteggi ottenuti dalle revisioni
+users_dict = (
+    {}
+)  # contiene come chiavi i nomi degli utenti e come attributi ogni utente ha una lista con i punteggi ottenuti dalle revisioni
 
 
 def calculate_no_change_score(line):
@@ -60,14 +62,14 @@ def calculate_no_change_score(line):
     # se ad esempio la linea conteneva un pezzo lungo di testo e questo non è stato modificato da una successiva revisione
     # vuol dire che il testo probabilmente era buono e quindi si otterà un punteggio alto
     # al contrario se la linea non conteneva contenuto utile(ad esempio uno spazio o andata a capo) non si ottiene punteggio aggiuntivo
-    text = line['text']
+    text = line["text"]
     return math.log(1 + len(text))
 
 
 def calculate_deletion_score(line):
     # questa calcola quanto va penalizzato il contenuto della linea che è stato cancellato. più la linea era grande e conteneva testo, più il peso
     # della penalità sarà grande perchè vuol dire che tutta la quantità di contenuto scritto non è stata ritenuta buona
-    text = line['text']
+    text = line["text"]
     return math.log(1 + len(text))
 
 
@@ -76,43 +78,48 @@ def calculate_modification_score(line):
     # per vedere le modifiche in questo caso si può utilizzare l'attributo "highlightRanges"
     # vedere documentazione: https://www.mediawiki.org/wiki/API:REST_API/Reference#Get_page_history
     results = []
-    diffs = line['highlightRanges']
+    diffs = line["highlightRanges"]
     score = 0
     for diff in diffs:
-        if diff['type'] == 1:  # vuol dire che è stato rimosso del contenuto
+        if diff["type"] == 1:  # vuol dire che è stato rimosso del contenuto
             # penalizzo in base alla lunghezza del contenuto rimosso
-            score -= math.log(1 + diff['length'])
+            score -= math.log(1 + diff["length"])
         else:
             score += 1  # è stato solo aggiunto del contenuto, quindi quello scritto precedentemente era ritenuto abbastanza buono
     return 0
 
 
 def check_differences(old_rev, new_rev, user_id, user_rev):
-    url = 'https://en.wikipedia.org/w/rest.php/v1/revision/{old}/compare/{new}'
+    url = "https://en.wikipedia.org/w/rest.php/v1/revision/{old}/compare/{new}"
     url = url.format(old=old_rev, new=new_rev)
     headers = {
-        'User-Agent': 'MediaWiki REST API docs examples/0.1 (https://www.mediawiki.org/wiki/API_talk:REST_API)'}
+        "User-Agent": "MediaWiki REST API docs examples/0.1 (https://www.mediawiki.org/wiki/API_talk:REST_API)"
+    }
     response = requests.get(url, headers=headers)
     data = response.json()
-    differences = data['diff']
+    differences = data["diff"]
     review_score = 0
     for diff in differences:
-        if diff['type'] == 0:  # la linea è rimasta la stessa nella nuova revisione, quindi FORSE era buona
+        if (
+            diff["type"] == 0
+        ):  # la linea è rimasta la stessa nella nuova revisione, quindi FORSE era buona
             review_score += calculate_no_change_score(diff)
-        elif diff['type'] == 2:  # la linea è stata cancellata quindi FORSE non era una buona linea
+        elif (
+            diff["type"] == 2
+        ):  # la linea è stata cancellata quindi FORSE non era una buona linea
             review_score -= calculate_deletion_score(diff)
-        elif diff['type'] == 3:  # linea modificata
+        elif diff["type"] == 3:  # linea modificata
             review_score -= calculate_modification_score(diff)
     if user_id in users_dict:
         users_dict[user_id].append((review_score, user_rev))
     else:
         users_dict[user_id] = [(review_score, user_rev)]
 
+
 def save_as_json(filename, json_object):
-    out_file = open(f"{filename}.json", "w", encoding='utf-8')
+    out_file = open(f"{filename}.json", "w", encoding="utf-8")
     # Dump the dictionary as JSON object in the file
-    json.dump(json_object, out_file, indent=2,
-              sort_keys=False,  ensure_ascii=False)
+    json.dump(json_object, out_file, indent=2, sort_keys=False, ensure_ascii=False)
     # Close the output file
     out_file.close()
 
@@ -127,30 +134,30 @@ if __name__ == "__main__":
     json_object = {}
     count = 0
     for name in names:
-        page = name.strip('\n')
+        page = name.strip("\n")
         print("Processing " + page)
         print("\n")
-        
 
         # get the history of the page
 
-        url = 'https://en.wikipedia.org/w/rest.php/v1/page/{page_name}/history'
+        url = "https://en.wikipedia.org/w/rest.php/v1/page/{page_name}/history"
         url = url.format(page_name=page)
 
         headers = {
-            'User-Agent': 'MediaWiki REST API docs examples/0.1 (https://meta.wikimedia.org/wiki/User:APaskulin_(WMF))'}
+            "User-Agent": "MediaWiki REST API docs examples/0.1 (https://meta.wikimedia.org/wiki/User:APaskulin_(WMF))"
+        }
         revisions_list = []
 
         # call the api to get the history of the page
         response = requests.get(url, headers=headers)
         response = json.loads(response.text)
-        revisions_list += response['revisions']
+        revisions_list += response["revisions"]
 
         try:
             for i in range(20):  # accumula le ultime 20 * 10 revisioni
-                response = requests.get(response['older'], headers=headers)
+                response = requests.get(response["older"], headers=headers)
                 response = json.loads(response.text)
-                revisions_list += response['revisions']
+                revisions_list += response["revisions"]
         except:
             pass
 
@@ -158,25 +165,30 @@ if __name__ == "__main__":
         i = len(revisions_list) - 1
         while i > 0:
             try:
-                if (revisions_list[i]['minor'] != True):
-                    old_rev = revisions_list[i]['id']
-                    new_rev = revisions_list[i-1]['id']
-                    user_id = revisions_list[i]['user']['id']
-                    user_name = revisions_list[i]['user']['name']
+                if revisions_list[i]["minor"] != True:
+                    old_rev = revisions_list[i]["id"]
+                    new_rev = revisions_list[i - 1]["id"]
+                    user_id = revisions_list[i]["user"]["id"]
+                    user_name = revisions_list[i]["user"]["name"]
                     # solo se la prossima review non è fatta da se stesso
-                    if (user_id != revisions_list[i-1]['user']['id'] and "bot" not in user_name):
-                        check_differences(old_rev, new_rev, user_id, revisions_list[i-1]['user']['id'] )
+                    if (
+                        user_id != revisions_list[i - 1]["user"]["id"]
+                        and "bot" not in user_name
+                    ):
+                        check_differences(
+                            old_rev,
+                            new_rev,
+                            user_id,
+                            revisions_list[i - 1]["user"]["id"],
+                        )
             except:
                 pass
             i = i - 1
-
 
         json_object[name] = users_dict
         users_dict = {}
         count += 1
         if count > 9:
             break
-        
 
-        
     save_as_json("users_scores", json_object)

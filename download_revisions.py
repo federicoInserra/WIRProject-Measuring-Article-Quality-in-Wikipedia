@@ -1,4 +1,4 @@
-'''
+"""
 import pywikibot
 import json
 
@@ -26,7 +26,7 @@ if __name__ == "__main__":
     # Close the output file
     out_file.close()
 
-'''
+"""
 
 import pywikibot
 import pypandoc
@@ -34,7 +34,7 @@ from pathlib import Path
 
 if __name__ == "__main__":
     country = "Italy"
-    site = pywikibot.Site('en', 'wikipedia')
+    site = pywikibot.Site("en", "wikipedia")
     page = pywikibot.Page(site, country)
     revs = page.revisions(content=True, total=1)
     Path("countries").mkdir(parents=True, exist_ok=True)
@@ -42,8 +42,7 @@ if __name__ == "__main__":
     wiki_out_file = open(f"countries/{country.lower()}.wiki", "w")
     for rev in revs:
         wiki_out_file.writelines(rev.text)
-        output = pypandoc.convert_text(
-            rev.text, format="mediawiki", to="html5")
+        output = pypandoc.convert_text(rev.text, format="mediawiki", to="html5")
         html_out_file.writelines(output)
     html_out_file.close()
     wiki_out_file.close()
