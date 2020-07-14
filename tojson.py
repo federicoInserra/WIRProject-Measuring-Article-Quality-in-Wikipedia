@@ -18,7 +18,7 @@ def convert_to_json(filename):
     json_object = dict()
     # Starting index
     index = -1
-    with open(f'{filename}.txt', 'r', encoding='utf-8') as fh:
+    with open(f"{filename}.txt", "r", encoding="utf-8") as fh:
         for line in fh:
             # Avoid blank lines
             if len(line) > 1:
@@ -42,17 +42,16 @@ def convert_to_json(filename):
 
 
 def save_as_json(filename, json_object):
-    with open(f"{filename}.json", "w", encoding='utf-8') as out_file:
+    with open(f"{filename}.json", "w", encoding="utf-8") as out_file:
         # Dump the dictionary as JSON object in the file
-        json.dump(json_object, out_file, indent=2,
-                  sort_keys=False,  ensure_ascii=False)
+        json.dump(json_object, out_file, indent=2, sort_keys=False, ensure_ascii=False)
 
 
 def save_as_csv(filename):
     # Open the JSON file
-    df = pd.read_json(f'{filename}.json')
+    df = pd.read_json(f"{filename}.json")
     # Save the pd.DataFrame as .csv file
-    df.to_csv(f'{filename}.csv', index=None)
+    df.to_csv(f"{filename}.csv", index=None)
 
 
 if __name__ == "__main__":

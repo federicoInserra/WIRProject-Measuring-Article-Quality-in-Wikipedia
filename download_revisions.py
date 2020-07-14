@@ -1,4 +1,4 @@
-'''
+"""
 import pywikibot
 import json
 
@@ -26,24 +26,37 @@ if __name__ == "__main__":
     # Close the output file
     out_file.close()
 
-'''
+"""
 
 import pywikibot
 import pypandoc
 from pathlib import Path
+import difflib
+
+
+def find_difference(file1, file2):
+    test = difflib.context_diff(latest_revision, output)
+    final_diff = [li for li in test]
+    if final_diff:
+        print(final_diff)
+
 
 if __name__ == "__main__":
     country = "Italy"
-    site = pywikibot.Site('en', 'wikipedia')
+    site = pywikibot.Site("en", "wikipedia")
     page = pywikibot.Page(site, country)
-    revs = page.revisions(content=True, total=1)
+    revs = list(page.revisions(content=True, total=20))
     Path("countries").mkdir(parents=True, exist_ok=True)
     html_out_file = open(f"countries/{country.lower()}.html", "w")
-    wiki_out_file = open(f"countries/{country.lower()}.wiki", "w")
-    for rev in revs:
-        wiki_out_file.writelines(rev.text)
-        output = pypandoc.convert_text(
-            rev.text, format="mediawiki", to="html5")
-        html_out_file.writelines(output)
+    authors = [rev.user for rev in revs]
+    latest_revision = pypandoc.convert_text(
+        revs[0].text, format="mediawiki", to="html5"
+    )
+    html_out_file.writelines(latest_revision)
+    print(authors)
+    for rev in revs[:5]:
+        if rev.user != authors[0] and not "Bot" in rev.user:
+            output = pypandoc.convert_text(rev.text, format="mediawiki", to="html5")
+            find_difference(latest_revision, output)
+            html_out_file.writelines(output)
     html_out_file.close()
-    wiki_out_file.close()
