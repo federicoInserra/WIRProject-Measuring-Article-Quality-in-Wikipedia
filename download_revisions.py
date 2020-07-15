@@ -1,5 +1,7 @@
 import pywikibot
 import pypandoc
+import diff_match_patch as dmp_module
+
 import difflib
 import bz2
 import pickle
@@ -72,7 +74,7 @@ def converto_to_html(file):
 
 def find_difference(file1, file2):
     change = Change(None, None)
-    diff = [li for li in difflib.ndiff(file1, file2) if li[0] != " "]
+    diff = [li for li in difflib.ndiff(file1, file2)]
     removed = [elem for elem in diff if elem[0] == "-"]
     added = [elem for elem in diff if elem[0] == "+"]
     if removed:
@@ -91,8 +93,8 @@ def download_revisions(path):
     revs = list(page.revisions(content=True, total=NUMBER_OF_REVISIONS))
     elements = list()
     for elem in revs:
-        # text = converto_to_html(elem.text)
-        revision = Revision(elem.revid, elem.user, elem.text)
+        text = converto_to_html(elem.text)
+        revision = Revision(elem.revid, elem.user, text)
         elements.append(revision)
     compressed_pickle(f"{path}/revisions", elements)
 
@@ -103,11 +105,31 @@ def diff(path):
     revs: list(Revision) = decompress_pickle(f"{path}/revisions.pbz2")
     latest_revision = revs[0].text
     for rev in revs[1:]:
-        change = find_difference(latest_revision, rev.text)
+        # change = find_difference(latest_revision, rev.text)
+        change = new_find_diff(latest_revision, rev.text)
         differences[rev.revid] = change.toJson()
         latest_revision = rev.text
     with open(f"{path}/changes.json", "w", encoding="utf-8") as output:
         json.dump(differences, output, indent=2, sort_keys=False, ensure_ascii=False)
+
+
+def new_find_diff(document1, document2):
+    dmp = dmp_module.diff_match_patch()
+    changes = dmp.diff_main(document1, document2, checklines=True, deadline=20)
+    dmp.diff_cleanupSemantic(changes)
+    a_changes = []
+    b_changes = []
+
+    for op, change in changes:
+        if op == -1:
+            a_changes.append(change)
+
+        if op == 1:
+            b_changes.append(change)
+
+    a_changes = "".join(a_changes)
+    b_changes = "".join(b_changes)
+    return Change(b_changes, a_changes)
 
 
 if __name__ == "__main__":
