@@ -36,3 +36,4 @@ typing-extensions==3.7.4.2
 urllib3==1.25.9
 wasabi==0.7.0
 wikipedia==1.4.0
+diff_match_patch=*

@@ -1,8 +1,6 @@
 import pywikibot
 import pypandoc
 import diff_match_patch as dmp_module
-
-import difflib
 import bz2
 import pickle
 import _pickle as cPickle
@@ -11,7 +9,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-NUMBER_OF_REVISIONS = 10
+NUMBER_OF_REVISIONS = 20
 
 
 @dataclass
@@ -72,20 +70,6 @@ def converto_to_html(file):
     return clean
 
 
-def find_difference(file1, file2):
-    change = Change(None, None)
-    diff = [li for li in difflib.ndiff(file1, file2)]
-    removed = [elem for elem in diff if elem[0] == "-"]
-    added = [elem for elem in diff if elem[0] == "+"]
-    if removed:
-        removed_words = [elem[2] for elem in removed]
-        change.removed = "".join(removed_words)
-    if added:
-        added_words = [elem[2] for elem in added]
-        change.added = "".join(added_words)
-    return change
-
-
 def download_revisions(path):
     # The site we want to run our bot on
     site = pywikibot.Site("en", "wikipedia")
@@ -93,9 +77,11 @@ def download_revisions(path):
     revs = list(page.revisions(content=True, total=NUMBER_OF_REVISIONS))
     elements = list()
     for elem in revs:
-        text = converto_to_html(elem.text)
-        revision = Revision(elem.revid, elem.user, text)
-        elements.append(revision)
+        if not elem.minor:
+            cleanup = elem.text.strip().split("country_code")
+            # text = converto_to_html(cleanup)
+            revision = Revision(elem.revid, elem.user, cleanup[1])
+            elements.append(revision)
     compressed_pickle(f"{path}/revisions", elements)
 
 
@@ -105,7 +91,6 @@ def diff(path):
     revs: list(Revision) = decompress_pickle(f"{path}/revisions.pbz2")
     latest_revision = revs[0].text
     for rev in revs[1:]:
-        # change = find_difference(latest_revision, rev.text)
         change = new_find_diff(latest_revision, rev.text)
         differences[rev.revid] = change.toJson()
         latest_revision = rev.text
