@@ -60,13 +60,17 @@ def download_revisions(data, country, path):
         params = {"action": "parse", "oldid": revid, "format": "json"}
         print(f"Downloading rev {revid}")
         response = requests.get(url=url, params=params)
+        # TODO: Pulire l'HTML dalla sintassi di Wikipedia prima di salvare
         elements.append(response.json())
-    # TODO: Accertarsi che salvi correttamente
+    # TODO: Accertarsi che salvi correttamente quello che ci serve
     compressed_pickle(f"{path}/revisions", elements)
 
 
 def diff(path):
     # TODO: Da aggiornare per la nuova versione
+    # TODO: Apire il file .rev per ogni country
+    #       Fare il diff tra due revisoni
+    #       Salvare in un file (changes.json ?) autore, parole aggiunte, parole rimosse
     pass
     """
     print("Computing the diff between revisions")
