@@ -1,15 +1,17 @@
-import pywikibot
-import pypandoc
 import diff_match_patch as dmp_module
 import bz2
 import pickle
 import _pickle as cPickle
-import re
 import json
 from dataclasses import dataclass
 from pathlib import Path
+from bs4 import BeautifulSoup
+import requests
 
-NUMBER_OF_REVISIONS = 20
+# import asyncio
+# import aiohttp
+# from aiohttp import ClientSession, ClientConnectorError
+# TODO: Async download https://stackoverflow.com/a/57689101
 
 
 @dataclass
@@ -47,31 +49,26 @@ def get_countries():
     return countries
 
 
-def converto_to_html(file):
-    text = pypandoc.convert_text(file, format="mediawiki", to="html5")
-    text = text.split('<h2 id="see_also">See also</h2>')[0]
-    clean = re.compile("<.*?>")
-    clean = re.sub(clean, "", text.strip())
-    return clean
-
-
-def download_revisions(path):
-    # The site we want to run our bot on
-    site = pywikibot.Site("en", "wikipedia")
-    page = pywikibot.Page(site, country)
-    revs = list(page.revisions(content=True, total=NUMBER_OF_REVISIONS))
+def download_revisions(data, country, path):
+    # session = requests.Session()
+    url = "https://en.wikipedia.org/w/api.php"
+    print(f"Downloading revisions for country: {country}")
+    # get the html text of the revision with id "oldid"
     elements = list()
-    for elem in revs:
-        if not elem.minor:
-            # TODO: Improve the cleanup process, maybe with a MediaWiki parser
-            cleanup = elem.text.strip().split("country_code")
-            # text = converto_to_html(cleanup)
-            revision = Revision(elem.revid, elem.user, cleanup[1])
-            elements.append(revision)
+    for elem in data[country][-5:]:
+        revid = elem["id"]
+        params = {"action": "parse", "oldid": revid, "format": "json"}
+        print(f"Downloading rev {revid}")
+        response = requests.get(url=url, params=params)
+        elements.append(response.json())
+    # TODO: Accertarsi che salvi correttamente
     compressed_pickle(f"{path}/revisions", elements)
 
 
 def diff(path):
+    # TODO: Da aggiornare per la nuova versione
+    pass
+    """
     print("Computing the diff between revisions")
     differences = list()
     revs: list(Revision) = decompress_pickle(f"{path}/revisions.pbz2")
@@ -82,6 +79,7 @@ def diff(path):
         latest_revision = rev.text
     with open(f"{path}/changes.json", "w", encoding="utf-8") as output:
         json.dump(differences, output, indent=2, sort_keys=False, ensure_ascii=False)
+    """
 
 
 def new_find_diff(cid, document1, document2):
@@ -104,14 +102,39 @@ def new_find_diff(cid, document1, document2):
 
 
 if __name__ == "__main__":
-    country = "Italy"
-    path = f"countries/{country.lower()}"
-    Path(path).mkdir(parents=True, exist_ok=True)
-    exists = Path.exists(Path(f"{path}/revisions.pbz2"))
-    if exists:
-        print("Revisions file found!")
-        diff(path)
-    else:
-        print("Revisions not found, downloading...")
-        download_revisions(path)
-        diff(path)
+    # TODO: Forse `pandas` gestisce meglio file enormi
+    with open("all_revisions.json", "r", encoding="utf-8") as json_file:
+        data = json.load(json_file)
+
+    countries = get_countries()
+    for country in countries:
+        path = f"countries/{country.lower()}"
+        Path(path).mkdir(parents=True, exist_ok=True)
+        exists = Path.exists(Path(f"{path}/revisions.pbz2"))
+        if exists:
+            print("Revisions file found!")
+            diff(path)
+        else:
+            print("Revisions not found, downloading...")
+            download_revisions(data, country, path)
+            diff(path)
+
+        """
+        # save the html text of the revision in the file
+        path_file = country.strip("\n") + "_" + str(data[country][0]["id"])
+        # save_as_json(path_file, DATA)
+
+        # open the file to parse it
+        f = open("Afghanistan_967477739.json", "r", encoding="utf-8")
+        data = json.load(f)
+        f.close()
+
+        # get the html text
+        html_doc = data["parse"]["text"]
+
+        # TODO non funziona da parsare
+        soup = BeautifulSoup(html_doc, "html.parser")
+
+        print(soup.get_text())
+        """
+

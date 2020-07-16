@@ -5,3 +5,5 @@ apicache-py3
 .vscode/settings.json
 env
 wir
+.DS_Store
+all_revisions.json
