@@ -14,24 +14,9 @@ NUMBER_OF_REVISIONS = 20
 
 @dataclass
 class Change:
-    _added: str
-    _removed: str
-
-    @property
-    def added(self) -> str:
-        return self._added
-
-    @added.setter
-    def added(self, v: str) -> None:
-        self._added = v
-
-    @property
-    def removed(self) -> str:
-        return self._removed
-
-    @added.setter
-    def removed(self, v: str) -> None:
-        self._removed = v
+    revid: int
+    added: str
+    removed: str
 
     def toJson(self):
         return json.dumps(self, default=lambda o: o.__dict__)
@@ -78,6 +63,7 @@ def download_revisions(path):
     elements = list()
     for elem in revs:
         if not elem.minor:
+            # TODO: Improve the cleanup process, maybe with a MediaWiki parser
             cleanup = elem.text.strip().split("country_code")
             # text = converto_to_html(cleanup)
             revision = Revision(elem.revid, elem.user, cleanup[1])
@@ -87,18 +73,18 @@ def download_revisions(path):
 
 def diff(path):
     print("Computing the diff between revisions")
-    differences = dict()
+    differences = list()
     revs: list(Revision) = decompress_pickle(f"{path}/revisions.pbz2")
     latest_revision = revs[0].text
     for rev in revs[1:]:
-        change = new_find_diff(latest_revision, rev.text)
-        differences[rev.revid] = change.toJson()
+        change = new_find_diff(rev.revid, latest_revision, rev.text)
+        differences.append(change.toJson())
         latest_revision = rev.text
     with open(f"{path}/changes.json", "w", encoding="utf-8") as output:
         json.dump(differences, output, indent=2, sort_keys=False, ensure_ascii=False)
 
 
-def new_find_diff(document1, document2):
+def new_find_diff(cid, document1, document2):
     dmp = dmp_module.diff_match_patch()
     changes = dmp.diff_main(document1, document2, checklines=True, deadline=20)
     dmp.diff_cleanupSemantic(changes)
@@ -114,7 +100,7 @@ def new_find_diff(document1, document2):
 
     a_changes = "".join(a_changes)
     b_changes = "".join(b_changes)
-    return Change(b_changes, a_changes)
+    return Change(cid, b_changes, a_changes)
 
 
 if __name__ == "__main__":
