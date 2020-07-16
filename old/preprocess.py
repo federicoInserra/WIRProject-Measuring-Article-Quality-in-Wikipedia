@@ -17,8 +17,10 @@ if __name__ == "__main__":
     clean = re.sub(clean, "", text.strip())
     # Save the plaintext version of the Wikipedia page
     save_to_plaintext(clean)
+    '''
     # Load SpaCy
     nlp = spacy.load("en_core_web_sm")
     doc = nlp(clean)
     for entity in doc.ents:
         print(entity.text, entity.label_)
+    '''
