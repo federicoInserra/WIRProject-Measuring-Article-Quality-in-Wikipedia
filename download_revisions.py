@@ -50,20 +50,22 @@ def get_countries():
 
 
 def download_revisions(data, country, path):
-    # session = requests.Session()
-    url = "https://en.wikipedia.org/w/api.php"
+
+    S = requests.Session()
     print(f"Downloading revisions for country: {country}")
-    # get the html text of the revision with id "oldid"
-    elements = list()
-    for elem in data[country][-5:]:
-        revid = elem["id"]
-        params = {"action": "parse", "oldid": revid, "format": "json"}
+    URL = "https://en.wikipedia.org/w/api.php"
+    for revision in data[country][-5:]:
+
+        revid = revision['id']
         print(f"Downloading rev {revid}")
-        response = requests.get(url=url, params=params)
-        # TODO: Pulire l'HTML dalla sintassi di Wikipedia prima di salvare
-        elements.append(response.json())
+        params = {"action": "parse", "oldid": revid, "format": "json"}
+        R = S.get(url=URL, params=params)
+        DATA = R.json()
+        clear_text = clean_html(DATA['parse']['text']['*'])
+        
+
     # TODO: Accertarsi che salvi correttamente quello che ci serve
-    compressed_pickle(f"{path}/revisions", elements)
+    #compressed_pickle(f"{path}/revisions", elements)
 
 
 def diff(path):
@@ -104,9 +106,25 @@ def new_find_diff(cid, document1, document2):
     b_changes = "".join(b_changes)
     return Change(cid, b_changes, a_changes)
 
+def save_as_json(filename, json_object):
+    out_file = open(f"{filename}.json", "w", encoding="utf-8")
+    # Dump the dictionary as JSON object in the file
+    json.dump(json_object, out_file, indent=2, sort_keys=False, ensure_ascii=False)
+    # Close the output file
+    out_file.close()
+
+
+
+def clean_html(raw_html):
+    # Ritorna il testo pulito dal html 
+    # TODO ora bisogna tokenizzarlo
+    cleantext = BeautifulSoup(raw_html, "html.parser").text
+    return cleantext
 
 if __name__ == "__main__":
     # TODO: Forse `pandas` gestisce meglio file enormi
+
+
     with open("all_revisions.json", "r", encoding="utf-8") as json_file:
         data = json.load(json_file)
 
@@ -123,22 +141,4 @@ if __name__ == "__main__":
             download_revisions(data, country, path)
             diff(path)
 
-        """
-        # save the html text of the revision in the file
-        path_file = country.strip("\n") + "_" + str(data[country][0]["id"])
-        # save_as_json(path_file, DATA)
-
-        # open the file to parse it
-        f = open("Afghanistan_967477739.json", "r", encoding="utf-8")
-        data = json.load(f)
-        f.close()
-
-        # get the html text
-        html_doc = data["parse"]["text"]
-
-        # TODO non funziona da parsare
-        soup = BeautifulSoup(html_doc, "html.parser")
-
-        print(soup.get_text())
-        """
-
+    
