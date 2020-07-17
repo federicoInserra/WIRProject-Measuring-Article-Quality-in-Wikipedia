@@ -7,6 +7,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from bs4 import BeautifulSoup
 import requests
+import nltk
+#nltk.download('stopwords')
+from nltk.tokenize import RegexpTokenizer
+from nltk.corpus import stopwords
+from nltk import word_tokenize
 
 # import asyncio
 # import aiohttp
@@ -54,14 +59,22 @@ def download_revisions(data, country, path):
     S = requests.Session()
     print(f"Downloading revisions for country: {country}")
     URL = "https://en.wikipedia.org/w/api.php"
+    revisions_json = {}
     for revision in data[country][-5:]:
-
+        rev_object = {}
         revid = revision['id']
         print(f"Downloading rev {revid}")
         params = {"action": "parse", "oldid": revid, "format": "json"}
         R = S.get(url=URL, params=params)
         DATA = R.json()
         clear_text = clean_html(DATA['parse']['text']['*'])
+        rev_object['user'] = revision['user']['name']
+        rev_object['text'] = clear_text
+        revisions_json[revid] = rev_object
+    
+    #save_as_json("countries/"+country.lower()+"/_revisions", revisions_json)
+    compressed_pickle(f"{path}/revisions", revisions_json)
+        
         
 
     # TODO: Accertarsi che salvi correttamente quello che ci serve
@@ -86,6 +99,8 @@ def diff(path):
     with open(f"{path}/changes.json", "w", encoding="utf-8") as output:
         json.dump(differences, output, indent=2, sort_keys=False, ensure_ascii=False)
     """
+
+
 
 
 def new_find_diff(cid, document1, document2):
@@ -116,15 +131,23 @@ def save_as_json(filename, json_object):
 
 
 def clean_html(raw_html):
-    # Ritorna il testo pulito dal html 
-    # TODO ora bisogna tokenizzarlo
+
+    # Clean the text from the html sintax
     cleantext = BeautifulSoup(raw_html, "html.parser").text
-    return cleantext
+
+    # Remove puntuaction
+    tokenizer = RegexpTokenizer(r'\w+')
+    cleantext = tokenizer.tokenize(cleantext)
+
+    # Remove stop words
+    stop_words = set(stopwords.words('english')) 
+    filtered_sentence = [w for w in cleantext if not w in stop_words] 
+    
+    return filtered_sentence
 
 if __name__ == "__main__":
     # TODO: Forse `pandas` gestisce meglio file enormi
-
-
+    
     with open("all_revisions.json", "r", encoding="utf-8") as json_file:
         data = json.load(json_file)
 
@@ -141,4 +164,3 @@ if __name__ == "__main__":
             download_revisions(data, country, path)
             diff(path)
 
-    
