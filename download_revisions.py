@@ -8,7 +8,8 @@ from pathlib import Path
 from bs4 import BeautifulSoup
 import requests
 import nltk
-#nltk.download('stopwords')
+nltk.download('stopwords')
+nltk.download('punkt')
 from nltk.tokenize import RegexpTokenizer
 from nltk.corpus import stopwords
 from nltk import word_tokenize
@@ -59,8 +60,9 @@ def download_revisions(data, country, path):
     S = requests.Session()
     print(f"Downloading revisions for country: {country}")
     URL = "https://en.wikipedia.org/w/api.php"
-    revisions_json = {}
+    revisions_json = []
     for revision in data[country][-5:]:
+
         rev_object = {}
         revid = revision['id']
         print(f"Downloading rev {revid}")
@@ -69,57 +71,86 @@ def download_revisions(data, country, path):
         DATA = R.json()
         clear_text = clean_html(DATA['parse']['text']['*'])
         rev_object['user'] = revision['user']['name']
+        rev_object['timestamp'] = revision['timestamp']
+        rev_object['revid'] = revid
         rev_object['text'] = clear_text
-        revisions_json[revid] = rev_object
+        
+        revisions_json.append(rev_object)
     
-    #save_as_json("countries/"+country.lower()+"/_revisions", revisions_json)
+    
     compressed_pickle(f"{path}/revisions", revisions_json)
         
-        
+    
 
-    # TODO: Accertarsi che salvi correttamente quello che ci serve
-    #compressed_pickle(f"{path}/revisions", elements)
-
+def construct_text(words):
+    new_text = ""
+    for w in words:
+        new_text += w + " "
+    return new_text
 
 def diff(path):
-    # TODO: Da aggiornare per la nuova versione
-    # TODO: Apire il file .rev per ogni country
-    #       Fare il diff tra due revisoni
-    #       Salvare in un file (changes.json ?) autore, parole aggiunte, parole rimosse
-    pass
-    """
+    
     print("Computing the diff between revisions")
-    differences = list()
-    revs: list(Revision) = decompress_pickle(f"{path}/revisions.pbz2")
-    latest_revision = revs[0].text
-    for rev in revs[1:]:
-        change = new_find_diff(rev.revid, latest_revision, rev.text)
-        differences.append(change.toJson())
-        latest_revision = rev.text
-    with open(f"{path}/changes.json", "w", encoding="utf-8") as output:
-        json.dump(differences, output, indent=2, sort_keys=False, ensure_ascii=False)
-    """
+    differences = []
+    diff = {}
+    revisions = decompress_pickle(f"{path}/revisions.pbz2")
+
+    i = len(revisions) - 1 
+    old_rev = revisions[i]
+    i -= 1
+    diff['revid'] = old_rev['revid']
+    diff['timestamp'] = old_rev['timestamp']
+    diff['user'] = old_rev['user']
+    diff['added'] = []
+    diff['removed'] = []
+    differences.append(diff)
+
+    while i >= 0:
+        diff = {}
+        new_rev = revisions[i]
+        new_text = construct_text(new_rev['text'])
+        old_text = construct_text(old_rev['text'])
+
+        removed_text, added_text  = find_diff(old_text,new_text)
+
+        diff['revid'] = new_rev['revid']
+        diff['timestamp'] = new_rev['timestamp']
+        diff['user'] = new_rev['user']
+        diff['added'] = added_text
+        diff['removed'] = removed_text
+
+        differences.append(diff)
+        old_rev = new_rev
+        i -= 1
+
+
+    compressed_pickle(f"{path}/differences", differences)
+
+    
+
+        
+    
+    
 
 
 
-
-def new_find_diff(cid, document1, document2):
+def find_diff(document1, document2):
     dmp = dmp_module.diff_match_patch()
     changes = dmp.diff_main(document1, document2, checklines=True, deadline=20)
     dmp.diff_cleanupSemantic(changes)
-    a_changes = []
-    b_changes = []
+    removed_text = ""
+    added_text = ""
 
     for op, change in changes:
         if op == -1:
-            a_changes.append(change)
+            removed_text+=(change)
 
         if op == 1:
-            b_changes.append(change)
+            added_text+=(change)
 
-    a_changes = "".join(a_changes)
-    b_changes = "".join(b_changes)
-    return Change(cid, b_changes, a_changes)
+    
+    return word_tokenize(removed_text), word_tokenize(added_text)
+    
 
 def save_as_json(filename, json_object):
     out_file = open(f"{filename}.json", "w", encoding="utf-8")
@@ -135,18 +166,28 @@ def clean_html(raw_html):
     # Clean the text from the html sintax
     cleantext = BeautifulSoup(raw_html, "html.parser").text
 
+    cleantext = filter_text(cleantext)
+
+    return cleantext
+
+    
+
+def filter_text(text):
     # Remove puntuaction
     tokenizer = RegexpTokenizer(r'\w+')
-    cleantext = tokenizer.tokenize(cleantext)
+    cleantext = tokenizer.tokenize(text)
 
     # Remove stop words
     stop_words = set(stopwords.words('english')) 
-    filtered_sentence = [w for w in cleantext if not w in stop_words] 
+    filtered_text = [w for w in cleantext if not w in stop_words] 
     
-    return filtered_sentence
+    return filtered_text
+
+
 
 if __name__ == "__main__":
-    # TODO: Forse `pandas` gestisce meglio file enormi
+    # TODO: Il codice raccoglie tutte le differenze tra le revisioni e se le salva, 
+    # manca la parte finale, in cui calcolare i punteggi degli utenti e dei documenti
     
     with open("all_revisions.json", "r", encoding="utf-8") as json_file:
         data = json.load(json_file)
@@ -163,4 +204,5 @@ if __name__ == "__main__":
             print("Revisions not found, downloading...")
             download_revisions(data, country, path)
             diff(path)
+        
 
