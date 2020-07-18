@@ -177,9 +177,12 @@ def filter_text(text):
 if __name__ == "__main__":
     # TODO: Il codice raccoglie tutte le differenze tra le revisioni e se le salva,
     # manca la parte finale, in cui calcolare i punteggi degli utenti e dei documenti
-
-    with open("all_revisions.json", "r", encoding="utf-8") as json_file:
-        data = json.load(json_file)
+    try:
+        with open("all_revisions.json", "r", encoding="utf-8") as json_file:
+            data = json.load(json_file)
+    except Exception as e:
+        print("Error: 'all_revisions.json' file not present")
+        exit(-1)
 
     countries = get_countries()
     for country in countries:
