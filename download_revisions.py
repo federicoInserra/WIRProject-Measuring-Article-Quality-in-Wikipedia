@@ -63,7 +63,7 @@ def download_revisions(data, country, path):
     print(f"Downloading revisions for country: {country}")
     URL = "https://en.wikipedia.org/w/api.php"
     revisions_json = []
-    for revision in data[country][-5:]:
+    for revision in data[country][-200:]:
 
         rev_object = {}
         revid = revision["id"]
@@ -186,14 +186,20 @@ if __name__ == "__main__":
 
     countries = get_countries()
     for country in countries:
-        path = f"countries/{country.lower()}"
-        Path(path).mkdir(parents=True, exist_ok=True)
-        exists = Path.exists(Path(f"{path}/revisions.pbz2"))
-        if exists:
-            print("Revisions file found!")
-            diff(path)
-        else:
-            print("Revisions not found, downloading...")
-            download_revisions(data, country, path)
-            diff(path)
+        try:
+
+            path = f"countries/{country.lower()}"
+            Path(path).mkdir(parents=True, exist_ok=True)
+            exists = Path.exists(Path(f"{path}/revisions.pbz2"))
+            if exists:
+                print("Revisions file found!")
+                diff(path)
+            else:
+                print("Revisions not found, downloading...")
+                download_revisions(data, country, path)
+                diff(path)
+        
+        except Exception as e:
+            print(e)
+            pass
 
