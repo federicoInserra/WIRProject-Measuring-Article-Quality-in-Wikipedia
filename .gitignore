@@ -7,3 +7,5 @@ env
 wir
 .DS_Store
 all_revisions.json
+countries/*/revisions.pbz2
+countries/*/changes.json
