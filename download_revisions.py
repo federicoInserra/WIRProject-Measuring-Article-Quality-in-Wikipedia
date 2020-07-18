@@ -52,7 +52,7 @@ def decompress_pickle(file):
 
 
 def get_countries():
-    with open("list_of_countries.txt", "r") as fo:
+    with open("list_of_countries.txt", "r", encoding="utf-8") as fo:
         countries = [country.strip() for country in fo]
     return countries
 
@@ -153,13 +153,9 @@ def save_as_json(filename, json_object):
 
 
 def clean_html(raw_html):
-
     # Clean the text from the html sintax
     cleantext = BeautifulSoup(raw_html, "html.parser").text
-
-    cleantext = filter_text(cleantext)
-
-    return cleantext
+    return filter_text(cleantext)
 
 
 def filter_text(text):
