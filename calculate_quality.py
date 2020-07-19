@@ -20,7 +20,11 @@ def get_countries():
         countries = [country.strip() for country in fo]
 
     return countries
+
 def check_differences(added, removed):
+    # La funzione controlla le differenze tra ciò che è stato aggiunto e ciò che è
+    # stato rimosso nella revisione successiva
+    # la lunghezza delle parole rimaste dopo la revisione è il mio score per quella revisione
 
     if len(added) > 0:
         
@@ -40,13 +44,24 @@ def calculate_scores(differences, users_score):
         try:
             rev = differences[i]
             next_rev = differences[i+1]
-
             added = rev['added']
+            while(rev['user'] == next_rev['user']): #se lo user fa più revisioni di fila
+                                                    #le unisco e la considero come unica
+                
+                added += next_rev['added']
+                i += 1
+                rev = next_rev
+                next_rev = differences[i+1]
+
+            
             user = rev['user']
             next_user = next_rev['user']
             removed = next_rev['removed']
 
             score = check_differences(added, removed)
+
+            # mi salvo anche il numero di parole rimosse, magari
+            # un utente con una buona autorità si vede anche da quante revisioni sistema
 
             if user in users_score:
                 users_score[user]['added'].append(score)
@@ -59,7 +74,7 @@ def calculate_scores(differences, users_score):
             else:
                 users_score[next_user] = {'added': [], 'removed': [len(removed)]}
             
-            list_of_users.append(user)
+            list_of_users.append(user) #lista di utenti che hanno revisionato il paese
 
         except:
             pass
@@ -74,11 +89,43 @@ def save_as_json(filename, json_object):
     out_file.close()
 
     
+def calculate_auth():
+    #calcolo l'autorità come la somma tra la media degli score delle revisioni
+    # sul contenuto aggiunto e quella di quello rimosso
+    # a e b sono due costanti per dare peso diverso ai due punteggi (forse il contenuto
+    # aggiunto è più importante di quello rimosso)
 
+    f = open("users_score.json", "r")
+    data = json.load(f)
+    users_auth = {}
+    a = 0.6
+    b = 0.4
+
+    for user in data:
+        
+        score_add = sum(data[user]['added']) / (len(data[user]['added']) +1)
+        score_rm = sum(data[user]['removed']) / (len(data[user]['removed']) +1)
+        users_auth[user] = (a * score_add) + (b * score_rm)
+    
+    return users_auth
+
+def calculate_quality(users_auth):
+    #la qualità di un articolo è data dalla somma delle autorità di chi ha partecipato
+    # alla revisione dell articolo
+    f = open("countries_score.json", "r")
+    data = json.load(f)
+    docs_quality = {}
+    for country in data:
+        docs_quality[country] = 0
+        for user in data[country]:
+            docs_quality[country] += users_auth[user]
+    
+    return docs_quality
+
+    
 if __name__ == "__main__":
 
-    #TODO scrivere la funzione che calcola la qualità del documento in base ai punteggi degli utenti
-    # Implementare il fatto che se un utente fa tante revisioni di fila, va interpretata come un unica revisione
+    
 
     countries = get_countries()
     users_score = {}
@@ -100,6 +147,14 @@ if __name__ == "__main__":
 
     save_as_json(f"users_score", users_score)
     save_as_json(f"countries_score", countries_score)
+
+    users_auth = calculate_auth()
+    docs_quality = calculate_quality(users_auth)
+
+    rank_countries = sorted(docs_quality.items(), key=lambda x: x[1], reverse=True)
+
+    for i in rank_countries:
+        print(i[0], i[1])
     
 
     
