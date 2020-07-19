@@ -12,12 +12,6 @@ from nltk.tokenize import RegexpTokenizer
 from nltk.corpus import stopwords
 from nltk import word_tokenize
 
-# import asyncio
-# import aiohttp
-# from aiohttp import ClientSession, ClientConnectorError
-# TODO: Async download https://stackoverflow.com/a/57689101
-
-
 nltk.download("stopwords")
 nltk.download("punkt")
 
@@ -58,12 +52,11 @@ def get_countries():
 
 
 def download_revisions(data, country, path):
-
     S = requests.Session()
     print(f"Downloading revisions for country: {country}")
     URL = "https://en.wikipedia.org/w/api.php"
     revisions_json = []
-    for revision in data[country][-200:]:
+    for revision in data[country][-1000:]:
 
         rev_object = {}
         revid = revision["id"]
@@ -76,9 +69,7 @@ def download_revisions(data, country, path):
         rev_object["timestamp"] = revision["timestamp"]
         rev_object["revid"] = revid
         rev_object["text"] = clear_text
-
         revisions_json.append(rev_object)
-
     compressed_pickle(f"{path}/revisions", revisions_json)
 
 
@@ -90,12 +81,10 @@ def construct_text(words):
 
 
 def diff(path):
-
     print("Computing the diff between revisions")
     differences = []
     diff = {}
     revisions = decompress_pickle(f"{path}/revisions.pbz2")
-
     i = len(revisions) - 1
     old_rev = revisions[i]
     i -= 1
@@ -105,25 +94,20 @@ def diff(path):
     diff["added"] = []
     diff["removed"] = []
     differences.append(diff)
-
     while i >= 0:
         diff = {}
         new_rev = revisions[i]
         new_text = construct_text(new_rev["text"])
         old_text = construct_text(old_rev["text"])
-
         removed_text, added_text = find_diff(old_text, new_text)
-
         diff["revid"] = new_rev["revid"]
         diff["timestamp"] = new_rev["timestamp"]
         diff["user"] = new_rev["user"]
         diff["added"] = added_text
         diff["removed"] = removed_text
-
         differences.append(diff)
         old_rev = new_rev
         i -= 1
-
     compressed_pickle(f"{path}/differences", differences)
 
 
@@ -189,12 +173,12 @@ if __name__ == "__main__":
             exists = Path.exists(Path(f"{path}/revisions.pbz2"))
             if exists:
                 print("Revisions file found!")
-                #diff(path)
+                diff(path)
             else:
                 print("Revisions not found, downloading...")
                 download_revisions(data, country, path)
                 diff(path)
-        
+
         except Exception as e:
             print(e)
             pass
