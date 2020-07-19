@@ -193,7 +193,7 @@ if __name__ == "__main__":
             exists = Path.exists(Path(f"{path}/revisions.pbz2"))
             if exists:
                 print("Revisions file found!")
-                diff(path)
+                #diff(path)
             else:
                 print("Revisions not found, downloading...")
                 download_revisions(data, country, path)
