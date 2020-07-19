@@ -38,8 +38,13 @@ def download_revisions(data, country, path):
     print(f"Downloading revisions for country: {country}")
     URL = "https://en.wikipedia.org/w/api.php"
     revisions_json = []
-    for revision in data[country][-1000:]:
-
+    revision_no = len(data[country])
+    if revision_no < 2000:
+        pass
+    else:
+        revision_no = 2000
+    print(f"Number of revision for {country}: {revision_no}")
+    for revision in data[country][-revision_no:]:
         rev_object = {}
         revid = revision["id"]
         print(f"Downloading rev {revid}")
