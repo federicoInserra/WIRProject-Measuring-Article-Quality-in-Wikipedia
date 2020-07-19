@@ -3,7 +3,6 @@ import bz2
 import pickle
 import _pickle as cPickle
 import json
-from dataclasses import dataclass
 from pathlib import Path
 from bs4 import BeautifulSoup
 import requests
@@ -14,23 +13,6 @@ from nltk import word_tokenize
 
 nltk.download("stopwords")
 nltk.download("punkt")
-
-
-@dataclass
-class Change:
-    revid: int
-    added: str
-    removed: str
-
-    def toJson(self):
-        return json.dumps(self, default=lambda o: o.__dict__)
-
-
-@dataclass
-class Revision:
-    revid: int
-    user: str
-    text: str
 
 
 # Pickle a file and then compress it into a file with extension
