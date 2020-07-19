@@ -147,7 +147,7 @@ if __name__ == "__main__":
         exit(-1)
 
     countries = get_countries()
-    for country in countries:
+    for country in countries[:100]:
         try:
 
             path = f"countries/{country.lower()}"
