@@ -137,7 +137,7 @@ if __name__ == "__main__":
     countries = get_countries()
     total_countries = len(countries)
     # Number of revision to download
-    i = 0
+    i = 1
     REVNO = 10
     for country in countries:
         try:
@@ -152,6 +152,7 @@ if __name__ == "__main__":
                 print(f"Revisions not found, downloading: {country}...")
                 download_revisions(country=country, revision_no=REVNO, path=path)
                 diff(path)
+            i += 1
 
         except Exception as e:
             print(e)
