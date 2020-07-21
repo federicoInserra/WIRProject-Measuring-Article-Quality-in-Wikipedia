@@ -1,14 +1,16 @@
 """
 from typing import Tuple, List
-import json
 from bs4 import BeautifulSoup
 import nltk
 from nltk.tokenize import RegexpTokenizer
 from nltk.corpus import stopwords
 from nltk import word_tokenize
 """
+import json
+from io import StringIO
 import requests
 import xml.etree.ElementTree as ET
+import mwparserfromhell
 import bz2
 import pickle
 import _pickle as cPickle
@@ -34,14 +36,40 @@ def get_countries():
 
 def download_revisions(country: str, revision_no: int, path: str) -> None:
     # API Parameters: https://www.mediawiki.org/wiki/Manual:Parameters_to_Special:Export
-    url = f"https://en.wikipedia.org/w/index.php?title=Special:Export&pages={country}&dir=desc$limit={revision_no}"
-    response = requests.post(url=url)
-    compressed_pickle(f"{path}/revisions", response.text)
+    try:
+        url = f"https://en.wikipedia.org/w/index.php?title=Special:Export&pages={country}&dir=desc&limit={revision_no}"
+        response = requests.post(url=url)
+        revisions_json = parse_xml(response.text)
+        compressed_pickle(f"{path}/revisions", revisions_json)
+    except:
+        pass
 
 
-def parse_xml(filename: str):
+def parse_xml(xml: str):
     # TODO: Parse <revision>s elements in XML https://stackoverflow.com/questions/1912434/how-do-i-parse-xml-in-python
-    root = ET.parse(filename).getroot()
+    it = ET.iterparse(StringIO(xml))
+    for _, el in it:
+        _, _, el.tag = el.tag.rpartition("}")  # strip ns
+    root = it.root[1]
+    revisions = root.findall("revision")
+    texts = list()
+    rev_object = {}
+    for revision in revisions:
+        timestamp = revision.find("timestamp").text
+        revid = revision.find("id").text
+        user = revision.find("contributor").find("username").text
+        raw_mediawiki = revision.find("text").text
+        text = mwparserfromhell.parse(raw_mediawiki)
+        # TODO: filter() https://mwparserfromhell.readthedocs.io/en/latest/_modules/mwparserfromhell/wikicode.html#Wikicode.filter
+        # .split("==See also==")[0]
+        # text = text.split("{{IPAc-en")[1]
+        # print(text)
+        rev_object["user"] = user
+        rev_object["timestamp"] = timestamp
+        rev_object["revid"] = revid
+        rev_object["text"] = text
+        texts.append(rev_object)
+    return texts
 
 
 if __name__ == "__main__":
@@ -49,7 +77,7 @@ if __name__ == "__main__":
     countries = get_countries()
 
     # Number of revision to download
-    REVNO = 5
+    REVNO = 1000
     for country in countries:
         try:
             path = f"countries/{country.lower()}"
@@ -60,7 +88,9 @@ if __name__ == "__main__":
                 # diff(path)
             else:
                 print(f"Revisions not found, downloading: {country}...")
-                download_revisions(country=country, revision_no=REVNO, path=path)
+                download_revisions(
+                    country=country.lower(), revision_no=REVNO, path=path
+                )
                 # diff(path)
 
         except Exception as e:
