@@ -39,8 +39,11 @@ def download_revisions(country: str, revision_no: int, path: str) -> None:
     try:
         url = f"https://en.wikipedia.org/w/index.php?title=Special:Export&pages={country}&dir=desc&limit={revision_no}"
         response = requests.post(url=url)
-        revisions_json = parse_xml(response.text)
-        compressed_pickle(f"{path}/revisions", revisions_json)
+        if response.status_code == 200:
+            revisions_json = parse_xml(response.text)
+            compressed_pickle(f"{path}/revisions", revisions_json)
+        else:
+            print(response.status_code)
     except:
         pass
 
@@ -61,9 +64,6 @@ def parse_xml(xml: str):
         raw_mediawiki = revision.find("text").text
         text = mwparserfromhell.parse(raw_mediawiki)
         # TODO: filter() https://mwparserfromhell.readthedocs.io/en/latest/_modules/mwparserfromhell/wikicode.html#Wikicode.filter
-        # .split("==See also==")[0]
-        # text = text.split("{{IPAc-en")[1]
-        # print(text)
         rev_object["user"] = user
         rev_object["timestamp"] = timestamp
         rev_object["revid"] = revid
@@ -88,9 +88,7 @@ if __name__ == "__main__":
                 # diff(path)
             else:
                 print(f"Revisions not found, downloading: {country}...")
-                download_revisions(
-                    country=country.lower(), revision_no=REVNO, path=path
-                )
+                download_revisions(country=country, revision_no=REVNO, path=path)
                 # diff(path)
 
         except Exception as e:
