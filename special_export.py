@@ -135,13 +135,16 @@ def find_diff(document1, document2):
 if __name__ == "__main__":
     # Get the list of countriess
     countries = get_countries()
+    total_countries = len(countries)
     # Number of revision to download
+    i = 0
     REVNO = 10
     for country in countries:
         try:
             path = f"countries/{country.lower()}"
             Path(path).mkdir(parents=True, exist_ok=True)
             exists = Path.exists(Path(f"{path}/revisions.pbz2"))
+            print(f"{i}/{total_countries} ", end="")
             if exists:
                 print(f"Revisions file found for country: {country}!")
                 diff(path)
