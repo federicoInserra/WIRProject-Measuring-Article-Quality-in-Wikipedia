@@ -41,11 +41,12 @@ def download_revisions(country: str, revision_no: int, path: str) -> None:
         response = requests.post(url=url)
         if response.status_code == 200:
             revisions_json = parse_xml(response.text)
+            print(len(revisions_json))
             compressed_pickle(f"{path}/revisions", revisions_json)
         else:
             print(response.status_code)
-    except:
-        pass
+    except Exception as e:
+        print(e)
 
 
 def parse_xml(xml: str):
@@ -56,14 +57,17 @@ def parse_xml(xml: str):
     root = it.root[1]
     revisions = root.findall("revision")
     texts = list()
-    rev_object = {}
     for revision in revisions:
         timestamp = revision.find("timestamp").text
         revid = revision.find("id").text
-        user = revision.find("contributor").find("username").text
+        user = "Anonimous"
+        if revision.find("contributor").find("username") != None:
+            user = revision.find("contributor").find("username").text
+        # print(revid)
         raw_mediawiki = revision.find("text").text
         text = mwparserfromhell.parse(raw_mediawiki)
         # TODO: filter() https://mwparserfromhell.readthedocs.io/en/latest/_modules/mwparserfromhell/wikicode.html#Wikicode.filter
+        rev_object = dict()
         rev_object["user"] = user
         rev_object["timestamp"] = timestamp
         rev_object["revid"] = revid
