@@ -2,7 +2,6 @@
     "python.linting.pylintEnabled": false,
     "python.linting.mypyEnabled": true,
     "python.linting.enabled": true,
-    "python.formatting.provider": "black",
-    "python.pythonPath": "/opt/miniconda3/envs/wir/bin/python"
+    "python.formatting.provider": "black"
 }
 
