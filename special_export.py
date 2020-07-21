@@ -1,11 +1,7 @@
-"""
-from typing import Tuple, List
-from bs4 import BeautifulSoup
 import nltk
 from nltk.tokenize import RegexpTokenizer
 from nltk.corpus import stopwords
 from nltk import word_tokenize
-"""
 import json
 from io import StringIO
 import requests
@@ -15,11 +11,16 @@ import bz2
 import pickle
 import _pickle as cPickle
 from pathlib import Path
+import diff_match_patch as dmp_module
+
+nltk.download("stopwords")
+nltk.download("punkt")
+
 
 # Pickle a file and then compress it into a file with extension
 def compressed_pickle(title, data):
     with bz2.BZ2File(title + ".pbz2", "wb") as f:
-        cPickle.dump(data, f)
+        cPickle.dump(data, f, -1)
 
 
 # Load any compressed pickle file
@@ -41,10 +42,9 @@ def download_revisions(country: str, revision_no: int, path: str) -> None:
         response = requests.post(url=url)
         if response.status_code == 200:
             revisions_json = parse_xml(response.text)
-            print(len(revisions_json))
             compressed_pickle(f"{path}/revisions", revisions_json)
         else:
-            print(response.status_code)
+            print(f"HTTP ERROR: {response.status_code}")
     except Exception as e:
         print(e)
 
@@ -53,20 +53,18 @@ def parse_xml(xml: str):
     # TODO: Parse <revision>s elements in XML https://stackoverflow.com/questions/1912434/how-do-i-parse-xml-in-python
     it = ET.iterparse(StringIO(xml))
     for _, el in it:
-        _, _, el.tag = el.tag.rpartition("}")  # strip ns
+        _, _, el.tag = el.tag.rpartition("}")  # strip namespaces
     root = it.root[1]
     revisions = root.findall("revision")
-    texts = list()
+    texts = []
     for revision in revisions:
         timestamp = revision.find("timestamp").text
         revid = revision.find("id").text
         user = "Anonimous"
         if revision.find("contributor").find("username") != None:
             user = revision.find("contributor").find("username").text
-        # print(revid)
         raw_mediawiki = revision.find("text").text
-        text = mwparserfromhell.parse(raw_mediawiki)
-        # TODO: filter() https://mwparserfromhell.readthedocs.io/en/latest/_modules/mwparserfromhell/wikicode.html#Wikicode.filter
+        text = mwparserfromhell.parse(raw_mediawiki).strip_code()
         rev_object = dict()
         rev_object["user"] = user
         rev_object["timestamp"] = timestamp
@@ -76,24 +74,79 @@ def parse_xml(xml: str):
     return texts
 
 
+def construct_text(words):
+    new_text = ""
+    for w in words:
+        new_text += w + " "
+    return new_text
+
+
+def diff(path):
+    print("Computing the diff between revisions")
+    differences = []
+    diff = {}
+    revisions = decompress_pickle(f"{path}/revisions.pbz2")
+    i = len(revisions) - 1
+    old_rev = revisions[i]
+    i -= 1
+    diff["revid"] = old_rev["revid"]
+    diff["timestamp"] = old_rev["timestamp"]
+    diff["user"] = old_rev["user"]
+    diff["added"] = []
+    diff["removed"] = []
+    differences.append(diff)
+    while i >= 0:
+        diff = {}
+        new_rev = revisions[i]
+        new_text = construct_text(new_rev["text"])
+        old_text = construct_text(old_rev["text"])
+        removed_text, added_text = find_diff(old_text, new_text)
+        diff["revid"] = new_rev["revid"]
+        diff["timestamp"] = new_rev["timestamp"]
+        diff["user"] = new_rev["user"]
+        diff["added"] = added_text
+        diff["removed"] = removed_text
+        differences.append(diff)
+        old_rev = new_rev
+        i -= 1
+    compressed_pickle(f"{path}/differences", differences)
+
+
+def find_diff(document1, document2):
+    dmp = dmp_module.diff_match_patch()
+    changes = dmp.diff_main(document1, document2, checklines=True, deadline=20)
+    dmp.diff_cleanupSemantic(changes)
+    removed_text = ""
+    added_text = ""
+
+    for op, change in changes:
+        if op == -1:
+            removed_text += change
+
+        if op == 1:
+            added_text += change
+
+    return word_tokenize(removed_text), word_tokenize(added_text)
+
+
 if __name__ == "__main__":
     # Get the list of countriess
     countries = get_countries()
 
     # Number of revision to download
-    REVNO = 1000
+    REVNO = 10
     for country in countries:
         try:
             path = f"countries/{country.lower()}"
             Path(path).mkdir(parents=True, exist_ok=True)
             exists = Path.exists(Path(f"{path}/revisions.pbz2"))
             if exists:
-                print("Revisions file found!")
-                # diff(path)
+                print(f"Revisions file found for country: {country}!")
+                diff(path)
             else:
                 print(f"Revisions not found, downloading: {country}...")
                 download_revisions(country=country, revision_no=REVNO, path=path)
-                # diff(path)
+                diff(path)
 
         except Exception as e:
             print(e)
