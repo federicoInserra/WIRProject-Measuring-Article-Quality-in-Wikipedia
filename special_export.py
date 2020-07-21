@@ -35,6 +35,17 @@ def get_countries():
     return countries
 
 
+def filter_text(text):
+    # Remove puntuaction
+    tokenizer = RegexpTokenizer(r"\w+")
+    string_text = "".join(text)
+    cleantext = tokenizer.tokenize(string_text)
+    # Remove stop words
+    stop_words = set(stopwords.words("english"))
+    filtered_text = [w for w in cleantext if not w in stop_words]
+    return " ".join(filtered_text)
+
+
 def download_revisions(country: str, revision_no: int, path: str) -> None:
     # API Parameters: https://www.mediawiki.org/wiki/Manual:Parameters_to_Special:Export
     try:
@@ -74,13 +85,6 @@ def parse_xml(xml: str):
     return texts
 
 
-def construct_text(words):
-    new_text = ""
-    for w in words:
-        new_text += w + " "
-    return new_text
-
-
 def diff(path):
     print("Computing the diff between revisions")
     differences = []
@@ -98,14 +102,15 @@ def diff(path):
     while i >= 0:
         diff = {}
         new_rev = revisions[i]
-        new_text = construct_text(new_rev["text"])
-        old_text = construct_text(old_rev["text"])
+        new_text = filter_text(new_rev["text"])
+        old_text = filter_text(old_rev["text"])
         removed_text, added_text = find_diff(old_text, new_text)
         diff["revid"] = new_rev["revid"]
         diff["timestamp"] = new_rev["timestamp"]
         diff["user"] = new_rev["user"]
         diff["added"] = added_text
         diff["removed"] = removed_text
+        save_as_json(f"dif_{i}", diff)
         differences.append(diff)
         old_rev = new_rev
         i -= 1
@@ -114,25 +119,23 @@ def diff(path):
 
 def find_diff(document1, document2):
     dmp = dmp_module.diff_match_patch()
-    changes = dmp.diff_main(document1, document2, checklines=True, deadline=20)
-    dmp.diff_cleanupSemantic(changes)
+    changes = dmp.diff_main(document1, document2, deadline=20)
     removed_text = ""
     added_text = ""
-
     for op, change in changes:
         if op == -1:
             removed_text += change
-
         if op == 1:
             added_text += change
-
-    return word_tokenize(removed_text), word_tokenize(added_text)
+    return (
+        word_tokenize(removed_text, preserve_line=True),
+        word_tokenize(added_text, preserve_line=True),
+    )
 
 
 if __name__ == "__main__":
     # Get the list of countriess
     countries = get_countries()
-
     # Number of revision to download
     REVNO = 10
     for country in countries:
