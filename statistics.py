@@ -1,16 +1,11 @@
 from file_utilities import decompress_pickle, get_countries
 from pathlib import Path
 from typing import Dict
+from file_utilities import filter_text, get_revisions
 
 
 def average(lst):
     return sum(lst) / len(lst)
-
-
-def get_revisions(country: str):
-    path = f"countries/{country.lower()}"
-    Path(path).mkdir(parents=True, exist_ok=True)
-    return decompress_pickle(f"{path}/revisions.pbz2")
 
 
 def authors_per_article(countries: list):
@@ -50,7 +45,7 @@ def articles_per_author(countries: list):
     max_value = max(all_values)
     min_value = min(all_values)
     print(max_value, min_value, avg_value)
-    print("No Anon")
+    print("No Anonimous")
     del authors["Anonimous"]
     all_values = authors.values()
     avg_value = average(all_values)
@@ -59,7 +54,19 @@ def articles_per_author(countries: list):
     print(max_value, min_value, avg_value)
 
 
+def words_per_article(countries: list):
+    for country in countries:
+        if country == "Mozambique":
+            print(country)
+            revisions = get_revisions(country)
+            for revision in revisions[:50]:
+                raw_text = revision["text"]
+                clean_text = filter_text(raw_text)
+                print(len(clean_text.split()))
+
+
 if __name__ == "__main__":
     countries = get_countries()
     # authors_per_article(countries)
     # articles_per_author(countries)
+    words_per_article(countries)

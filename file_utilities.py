@@ -7,8 +7,6 @@ import nltk
 from nltk.tokenize import RegexpTokenizer
 from nltk.corpus import stopwords
 from nltk import word_tokenize
-from bs4 import BeautifulSoup
-import diff_match_patch as dmp_module
 
 
 def save_as_json(filename, json_object):
@@ -37,19 +35,22 @@ def get_countries():
     return countries
 
 
-def clean_html(raw_html):
-    # Clean the text from the html sintax
-    cleantext = BeautifulSoup(raw_html, "html.parser").text
-    return filter_text(cleantext)
+def parse_text(text):
+    return mwparserfromhell.parse(text).strip_code()
+
+
+def get_revisions(country: str):
+    path = f"countries/{country.lower()}"
+    Path(path).mkdir(parents=True, exist_ok=True)
+    return decompress_pickle(f"{path}/revisions.pbz2")
 
 
 def filter_text(text):
     # Remove puntuaction
     tokenizer = RegexpTokenizer(r"\w+")
-    cleantext = tokenizer.tokenize(text)
-
+    string_text = "".join(text)
+    cleantext = tokenizer.tokenize(string_text)
     # Remove stop words
     stop_words = set(stopwords.words("english"))
     filtered_text = [w for w in cleantext if not w in stop_words]
-
-    return filtered_text
+    return " ".join(filtered_text)
