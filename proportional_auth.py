@@ -137,7 +137,7 @@ def calculate_rank(users_contributions):
 
 if __name__ == "__main__":
     
-    """
+    
     users_contributions = {}
     countries = fut.get_countries()
 
@@ -163,7 +163,7 @@ if __name__ == "__main__":
             pass
     
     fut.save_as_json("users_contributions", users_contributions)
-    """
+    
     f = open("users_contributions.json", "r", encoding="utf-8")
     users_contributions = json.load(f)
     f.close()
