@@ -8,8 +8,8 @@ def naive_classifier():
     countries = fut.get_countries()
     country_list = []
     country_dict = dict()
-    for country in countries[:5]:
-        print(f"{country}")
+    for country in countries:
+        #print(f"{country}")
         revisions = fut.get_revisions(country)
         max_length = 0
         for revision in revisions[:50]:
@@ -24,6 +24,23 @@ def naive_classifier():
 if __name__ == "__main__":
     f = open("ranked_countries.json", "r", encoding="utf-8")
     data = json.load(f)
-    ordered_list = naive_classifier()
-    metrics.NDCG_score(data,ordered_list,81)
+    rank_countries = naive_classifier()
     f.close()
+    print("\n")
+    print("-----------------  NDCG score  -------------")
+    print("\n")
+    print("TOP 12")
+    print(metrics.NDCG_score(data, rank_countries, 12))
+    print("\n")
+
+    print("TOP 22")
+    print(metrics.NDCG_score(data, rank_countries, 22))
+    print("\n")
+
+    print("TOP 81")
+    print(metrics.NDCG_score(data, rank_countries, 81))
+    print("\n")
+
+    print("TOP 206")
+    print(metrics.NDCG_score(data, rank_countries, 206))
+    print("\n")
