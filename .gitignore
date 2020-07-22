@@ -13,3 +13,4 @@ urls
 173countries.zip
 countries2
 countriesBackup
+__pycache__
