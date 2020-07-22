@@ -55,18 +55,21 @@ def articles_per_author(countries: list):
 
 
 def words_per_article(countries: list):
+    words = list()
     for country in countries:
-        if country == "Mozambique":
-            print(country)
-            revisions = get_revisions(country)
-            for revision in revisions[:50]:
-                raw_text = revision["text"]
-                clean_text = filter_text(raw_text)
-                print(len(clean_text.split()))
+        print(country)
+        revisions = get_revisions(country)
+        for revision in revisions:
+            raw_text = revision["text"]
+            clean_text = filter_text(raw_text)
+            lenghth = len(clean_text.split())
+            if lenghth > 100:
+                words.append(lenghth)
+    print(max(words), min(words), average(words))
 
 
 if __name__ == "__main__":
     countries = get_countries()
     # authors_per_article(countries)
     # articles_per_author(countries)
-    words_per_article(countries)
+    # words_per_article(countries)
