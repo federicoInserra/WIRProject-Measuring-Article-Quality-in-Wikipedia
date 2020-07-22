@@ -19,16 +19,16 @@ def calculate_Z(topK, real_rank, predict_rank):
         country = perfect_rank[i]
         p = i + 1
         if real_rank[country] == "FA":
-            score = (pow(2, 4) - 1) / math.log(1 + p)
+            score = (2**4 - 1) / math.log(1 + p)
 
         elif real_rank[country] == "GA":
-            score = (pow(2, 3) - 1) / math.log(1 + p)
+            score = (2**3 - 1) / math.log(1 + p)
 
         elif real_rank[country] == "B":
-            score = (pow(2, 2) - 1) / math.log(1 + p)
+            score = (2**2 - 1) / math.log(1 + p)
 
         elif real_rank[country] == "C":
-            score = (pow(2, 1) - 1) / math.log(1 + p)
+            score = (2**1 - 1) / math.log(1 + p)
 
         else:
             score = 0
@@ -50,16 +50,16 @@ def NDCG_score(real_rank, predict_rank, topK):
             p = i + 1
             country = predict_rank[i][0]
             if real_rank[country] == "FA":
-                score = (pow(2, 4) - 1) / math.log(1 + p)
+                score = (2**4 - 1) / math.log(1 + p)
 
             elif real_rank[country] == "GA":
-                score = (pow(2, 3) - 1) / math.log(1 + p)
+                score = (2**3 - 1) / math.log(1 + p)
 
             elif real_rank[country] == "B":
-                score = (pow(2, 2) - 1) / math.log(1 + p)
+                score = (2**2 - 1) / math.log(1 + p)
 
             elif real_rank[country] == "C":
-                score = (pow(2, 1) - 1) / math.log(1 + p)
+                score = (2**1 - 1) / math.log(1 + p)
 
             else:
                 score = 0
