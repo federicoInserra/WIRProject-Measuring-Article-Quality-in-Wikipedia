@@ -119,8 +119,8 @@ if __name__ == "__main__":
     fut.save_as_json(f"users_score", users_score)
     fut.save_as_json(f"countries_score", countries_score)
 
-    users_auth = metrics.calculate_auth()
-    docs_quality = metrics.calculate_quality(users_auth)
+    users_auth = calculate_auth()
+    docs_quality = calculate_quality(users_auth)
 
     rank_countries = sorted(docs_quality.items(), key=lambda x: x[1], reverse=True)
 
