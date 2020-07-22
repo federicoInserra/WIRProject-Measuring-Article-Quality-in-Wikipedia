@@ -53,7 +53,7 @@ def download_revisions(country: str, revision_no: int, path: str) -> None:
         response = requests.post(url=url)
         if response.status_code == 200:
             revisions_json = parse_xml(response.text)
-            compressed_pickle(f"{path}/revisions", revisions_json)
+            compressed_pickle(f"{path}/latest", revisions_json)
         else:
             print(f"HTTP ERROR: {response.status_code}")
     except Exception as e:
@@ -80,7 +80,7 @@ def parse_xml(xml: str):
         rev_object["user"] = user
         rev_object["timestamp"] = timestamp
         rev_object["revid"] = revid
-        rev_object["text"] = text
+        rev_object["text"] = filter_text(text)
         texts.append(rev_object)
     return texts
 
@@ -138,13 +138,14 @@ if __name__ == "__main__":
     total_countries = len(countries)
     # Number of revision to download
     i = 1
-    REVNO = 10
+    REVNO = 1
     for country in countries:
         try:
             path = f"countries/{country.lower()}"
             Path(path).mkdir(parents=True, exist_ok=True)
             exists = Path.exists(Path(f"{path}/revisions.pbz2"))
             print(f"{i}/{total_countries} ", end="")
+            i += 1
             if exists:
                 print(f"Revisions file found for country: {country}!")
                 diff(path)
@@ -152,7 +153,6 @@ if __name__ == "__main__":
                 print(f"Revisions not found, downloading: {country}...")
                 download_revisions(country=country, revision_no=REVNO, path=path)
                 diff(path)
-            i += 1
 
         except Exception as e:
             print(e)

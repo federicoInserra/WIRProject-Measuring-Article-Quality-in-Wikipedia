@@ -12,7 +12,6 @@ users_aut = {}
 docs_quality = {}
 
 
-
 def gen_random():
     value = random()
     value = f"{value:.3f}"
@@ -27,6 +26,7 @@ def init_doc_quality():
     for country in countries:
         docs_quality[country] = gen_random()
 
+
 def init_users_aut(users_contribution):
     for user in users_contribution:
         users_aut[user] = gen_random()
@@ -35,49 +35,50 @@ def init_users_aut(users_contribution):
 def calculate_contributions(revisions, differences, country, users_contributions):
 
     i = 0
-    
+
     while i < len(differences):
-        
+
         try:
             rev = differences[i]
-            next_rev = differences[i+1]
-            added = rev['added']
+            next_rev = differences[i + 1]
+            added = rev["added"]
 
-            while(rev['user'] == next_rev['user']): #se lo user fa più revisioni di fila
-                                                    #le unisco e la considero come unica
-                
-                added += next_rev['added']
+            while (
+                rev["user"] == next_rev["user"]
+            ):  # se lo user fa più revisioni di fila
+                # le unisco e la considero come unica
+
+                added += next_rev["added"]
                 i += 1
                 rev = next_rev
-                next_rev = differences[i+1]
+                next_rev = differences[i + 1]
 
-            
-            user = rev['user']
-            
+            user = rev["user"]
+
             # take the actual text
-            last_rev = fut.filter_text(revisions[0]['text'])
+            last_rev = fut.filter_text(revisions[0]["text"])
 
-            # check the words that are survived      
-            survived_words = [ w for w in added if w in last_rev ]
+            # check the words that are survived
+            survived_words = [w for w in added if w in last_rev]
 
-            contribution = len(survived_words)/ len(last_rev)
-            
+            contribution = len(survived_words) / len(last_rev)
+
             if user in users_contributions:
                 if country in users_contributions[user]:
                     users_contributions[user][country] += contribution
                 else:
-                    users_contributions[user][country] =  contribution
+                    users_contributions[user][country] = contribution
             else:
                 users_contributions[user] = {country: contribution}
-            
-            
+
         except Exception as e:
             print(e)
             pass
 
         i += 1
-    
+
     return users_contributions
+
 
 def calculate_authorities(users_contributions):
     auth = 0
@@ -86,42 +87,40 @@ def calculate_authorities(users_contributions):
     for user in users_contributions:
         for country in users_contributions[user]:
             auth += users_contributions[user][country] * docs_quality[country]
-        
+
         # save max authority to normalize
         if auth > max_auth:
             max_auth = auth
-        
+
         users_aut[user] = auth
-    
+
     # normalize
     for user in users_aut:
-        users_aut[user] = users_aut[user]/ max_auth
+        users_aut[user] = users_aut[user] / max_auth
 
 
 def calculate_qualities(users_contributions):
     quality = 0
     max_quality = 0
     docs = {}
-    
+
     for user in users_contributions:
         for country in users_contributions[user]:
             if country in docs:
                 docs[country] += users_contributions[user][country] * users_aut[user]
             else:
                 docs[country] = users_contributions[user][country] * users_aut[user]
-            
+
             if docs[country] > max_quality:
                 max_quality = docs[country]
 
-
     for country in docs:
         docs_quality[country] = docs[country] / max_quality
-     
 
 
 def calculate_rank(users_contributions):
 
-    #initialize authority and quality of documents
+    # initialize authority and quality of documents
     init_doc_quality()
     init_users_aut(users_contributions)
 
@@ -167,13 +166,12 @@ if __name__ == "__main__":
     f = open("users_contributions.json", "r", encoding="utf-8")
     users_contributions = json.load(f)
     f.close()
-    
+
     f = open("ranked_countries.json", "r", encoding="utf-8")
     real_rank = json.load(f)
     f.close()
 
     rank = calculate_rank(users_contributions)
-
 
     print("\n")
     print("-----------------  NDCG score  -------------")

@@ -61,34 +61,31 @@ def calculate_scores(differences, users_score, revisions, country):
     
     i = 0
     while i < len(differences):
-        
+
         try:
             rev = differences[i]
-            next_rev = differences[i+1]
-            added = rev['added']
-            while(rev['user'] == next_rev['user']): #se lo user fa più revisioni di fila
-                                                    #le unisco e la considero come unica
-                
-                added += next_rev['added']
+            next_rev = differences[i + 1]
+            added = rev["added"]
+            while (
+                rev["user"] == next_rev["user"]
+            ):  # se lo user fa più revisioni di fila
+                # le unisco e la considero come unica
+
+                added += next_rev["added"]
                 i += 1
                 rev = next_rev
-                next_rev = differences[i+1]
+                next_rev = differences[i + 1]
 
-            
-            user = rev['user']
-            
-            review = check_words(added, revisions, i, reviewers)
-            review['country'] = country
+            user = rev["user"]
 
-            
+            score = new_check_diff(added, revisions, i)
 
-            if len(review['survived_words']) > 0:
-                
-                if user in users_score:
-                    users_score[user].append(review)
-                else:
-                    users_score[user] = [review]
+            if user in users_score:
+                users_score[user]["added"].append(score)
+            else:
+                users_score[user] = {"added": [score], "removed": []}
 
+            list_of_users.append(user)  # lista di utenti che hanno revisionato il paese
 
         except Exception as e:
             print(e)
@@ -166,24 +163,20 @@ def calculate_quality(countries_score, users_score):
 
 if __name__ == "__main__":
 
-    
-    
     f = open("ranked_countries.json", "r", encoding="utf-8")
     data = json.load(f)
-    
-    
+
     countries = fut.get_countries()
     """
     users_score = {}
     countries_score = {}
 
     for country in countries:
-        print("Processing "+ country)
-        
+        print("Processing " + country)
+
         try:
             path_rev = path = f"countries/{country.lower()}/revisions.pbz2"
             revisions = fut.decompress_pickle(path_rev)
-            
 
             path_diff = f"countries/{country.lower()}/differences.pbz2"
             differences = fut.decompress_pickle(path_diff)
@@ -196,8 +189,6 @@ if __name__ == "__main__":
         except Exception as e:
             print(e)
             pass
-        
-   
 
     fut.save_as_json(f"users_score", users_score)
     fut.save_as_json(f"countries_score", countries_score)
@@ -216,7 +207,7 @@ if __name__ == "__main__":
         calculate_quality(countries_score, users_score)
 
     rank_countries = sorted(docs_quality.items(), key=lambda x: x[1], reverse=True)
-    
+
     print("\n")
     print("-----------------  NDCG score  -------------")
     print("\n")

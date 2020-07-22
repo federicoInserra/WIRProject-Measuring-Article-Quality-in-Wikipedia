@@ -7,8 +7,7 @@ import nltk
 from nltk.tokenize import RegexpTokenizer
 from nltk.corpus import stopwords
 from nltk import word_tokenize
-from bs4 import BeautifulSoup
-import diff_match_patch as dmp_module
+
 
 def save_as_json(filename, json_object):
     out_file = open(f"{filename}.json", "w", encoding="utf-8")
@@ -16,6 +15,7 @@ def save_as_json(filename, json_object):
     json.dump(json_object, out_file, indent=2, sort_keys=False, ensure_ascii=False)
     # Close the output file
     out_file.close()
+
 
 def compressed_pickle(title, data):
     with bz2.BZ2File(title + ".pbz2", "wb") as f:
@@ -27,6 +27,7 @@ def decompress_pickle(file):
     data = bz2.BZ2File(file, "rb")
     return cPickle.load(data)
 
+
 def get_countries():
     with open("list_of_countries.txt", "r") as fo:
         countries = [country.strip() for country in fo]
@@ -34,20 +35,22 @@ def get_countries():
     return countries
 
 
+def parse_text(text):
+    return mwparserfromhell.parse(text).strip_code()
 
-def clean_html(raw_html):
-    # Clean the text from the html sintax
-    cleantext = BeautifulSoup(raw_html, "html.parser").text
-    return filter_text(cleantext)
+
+def get_revisions(country: str):
+    path = f"countries/{country.lower()}"
+    Path(path).mkdir(parents=True, exist_ok=True)
+    return decompress_pickle(f"{path}/revisions.pbz2")
 
 
 def filter_text(text):
     # Remove puntuaction
     tokenizer = RegexpTokenizer(r"\w+")
-    cleantext = tokenizer.tokenize(text)
-
+    string_text = "".join(text)
+    cleantext = tokenizer.tokenize(string_text)
     # Remove stop words
     stop_words = set(stopwords.words("english"))
     filtered_text = [w for w in cleantext if not w in stop_words]
-
-    return filtered_text
+    return " ".join(filtered_text)
