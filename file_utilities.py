@@ -3,6 +3,12 @@ import pickle
 import _pickle as cPickle
 import json
 from pathlib import Path
+import nltk
+from nltk.tokenize import RegexpTokenizer
+from nltk.corpus import stopwords
+from nltk import word_tokenize
+from bs4 import BeautifulSoup
+import diff_match_patch as dmp_module
 
 def save_as_json(filename, json_object):
     out_file = open(f"{filename}.json", "w", encoding="utf-8")
@@ -26,3 +32,22 @@ def get_countries():
         countries = [country.strip() for country in fo]
 
     return countries
+
+
+
+def clean_html(raw_html):
+    # Clean the text from the html sintax
+    cleantext = BeautifulSoup(raw_html, "html.parser").text
+    return filter_text(cleantext)
+
+
+def filter_text(text):
+    # Remove puntuaction
+    tokenizer = RegexpTokenizer(r"\w+")
+    cleantext = tokenizer.tokenize(text)
+
+    # Remove stop words
+    stop_words = set(stopwords.words("english"))
+    filtered_text = [w for w in cleantext if not w in stop_words]
+
+    return filtered_text

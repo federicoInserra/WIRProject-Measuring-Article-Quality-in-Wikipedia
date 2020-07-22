@@ -55,12 +55,12 @@ def calculate_contributions(revisions, differences, country, users_contributions
             user = rev['user']
             
             # take the actual text
-            last_rev = revisions[0]
+            last_rev = fut.filter_text(revisions[0]['text'])
 
             # check the words that are survived      
-            survived_words = [ w for w in added if w in last_rev['text'] ]
+            survived_words = [ w for w in added if w in last_rev ]
 
-            contribution = len(survived_words)/ len(last_rev['text'])
+            contribution = len(survived_words)/ len(last_rev)
             
             if user in users_contributions:
                 if country in users_contributions[user]:
@@ -138,8 +138,6 @@ def calculate_rank(users_contributions):
 if __name__ == "__main__":
     
     """
-    
-    
     users_contributions = {}
     countries = fut.get_countries()
 
@@ -151,6 +149,7 @@ if __name__ == "__main__":
             # get entire revisions
             path_rev = path = f"countries/{country.lower()}/revisions.pbz2"
             revisions = fut.decompress_pickle(path)
+            
 
             # get all the differences between revisions
             path_diff = f"countries/{country.lower()}/differences.pbz2"
@@ -164,7 +163,6 @@ if __name__ == "__main__":
             pass
     
     fut.save_as_json("users_contributions", users_contributions)
-
     """
     f = open("users_contributions.json", "r", encoding="utf-8")
     users_contributions = json.load(f)

@@ -32,11 +32,11 @@ def init_users_aut(data):
 
 def new_check_diff(added, revisions, i):
     
-    last_rev = revisions[0]
+    last_rev = fut.filter_text(revisions[0]['text'])
     
     if len(added) > 0:
         
-        good_words = [w for w in added if w in last_rev['text'] ]
+        good_words = [w for w in added if w in last_rev ]
         score = len(good_words) / len(added) * (len(revisions) - i) # più tempo è passato da quando ho fatto la revisione e più vuol dire che quello che ho scritto era buono
             
     else:
@@ -69,9 +69,7 @@ def calculate_scores(differences, users_score, revisions):
             
             score = new_check_diff(added, revisions, i)
 
-            # mi salvo anche il numero di parole rimosse, magari
-            # un utente con una buona autorità si vede anche da quante revisioni sistema
-
+            
             if user in users_score:
                 users_score[user]['added'].append(score)
             else:
@@ -107,6 +105,7 @@ if __name__ == "__main__":
         try:
             path_rev = path = f"countries/{country.lower()}/revisions.pbz2"
             revisions = fut.decompress_pickle(path_rev)
+            
 
             path_diff = f"countries/{country.lower()}/differences.pbz2"
             differences = fut.decompress_pickle(path_diff)
