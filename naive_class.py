@@ -1,24 +1,22 @@
 import metrics
 import file_utilities as fut
-import statistics as stat
-import metrics
 import json
+
 
 def naive_classifier():
     countries = fut.get_countries()
-    country_list = []
     country_dict = dict()
     for country in countries:
-        #print(f"{country}")
+        print(f"{country}")
         revisions = fut.get_revisions(country)
-        max_length = 0
-        for revision in revisions[:50]:
-            text_len = len(fut.parse_text(revision["text"]).split())
-            if(text_len > max_length):
-                max_length = text_len
-        country_dict[country] = max_length
-        finale = sorted(country_dict, key=country_dict.get, reverse=True)
-    return finale
+        text_len = len(fut.parse_text(revisions[0]["text"]).split())
+        country_dict[country] = text_len
+    finale = sorted(country_dict, key=country_dict.get, reverse=True)
+    list_of_tuple = list()
+    for elem in finale:
+        toadd = (elem, 0)
+        list_of_tuple.append(toadd)
+    return list_of_tuple
 
 
 if __name__ == "__main__":
