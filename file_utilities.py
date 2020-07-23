@@ -32,7 +32,6 @@ def decompress_pickle(file):
 def get_countries():
     with open("list_of_countries.txt", "r") as fo:
         countries = [country.strip() for country in fo]
-
     return countries
 
 

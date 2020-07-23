@@ -104,6 +104,8 @@ def diff(path):
         new_rev = revisions[i]
         new_text = filter_text(new_rev["text"])
         old_text = filter_text(old_rev["text"])
+        if len(new_text) < 10:
+            pass
         removed_text, added_text = find_diff(old_text, new_text)
         diff["revid"] = new_rev["revid"]
         diff["timestamp"] = new_rev["timestamp"]
