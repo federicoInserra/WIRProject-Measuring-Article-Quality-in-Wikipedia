@@ -2,6 +2,8 @@
 
 This goal of this repository is to create a system that allows to calculate with a good approximation the quality of a Wikipedia article based on the users's revisions and their authority, based on the paper: **Measuring article quality in wikipedia.**[^1]
 
+Presentation can be found [here](https://docs.google.com/presentation/d/1iJfZbEXopexDPcg7ff3lYayVseoHR_sctfjdxNPTfAs/edit?usp=sharing)
+
 ## Requirements
 - `pip install -r requirements.txt`
 
