@@ -15,25 +15,20 @@ docs_quality = {}
 def gen_random():
     value = random()
     value = f"{value:.3f}"
-    value = float(value)
-
-    return value
+    return float(value)
 
 
 def init_doc_quality(countries):
-
     for country in countries:
         docs_quality[country] = gen_random()
 
 
 def init_users_aut(users):
-
     for user in users:
         users_aut[user] = gen_random()
 
 
 def check_words(added, revisions, i, reviewers):
-
     current_text = fut.filter_text(revisions[0]["text"])
     review = {}
 
@@ -196,7 +191,6 @@ if __name__ == "__main__":
         calculate_quality(countries_score, users_score)
 
     rank_countries = sorted(docs_quality.items(), key=lambda x: x[1], reverse=False)
-    # rank_countries.reverse()
 
     print("\n")
     print("-----------------  NDCG score  -------------")

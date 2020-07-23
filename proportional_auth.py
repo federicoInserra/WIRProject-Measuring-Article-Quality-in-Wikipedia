@@ -15,9 +15,7 @@ docs_quality = {}
 def gen_random():
     value = random()
     value = f"{value:.3f}"
-    value = float(value)
-
-    return value
+    return float(value)
 
 
 def init_doc_quality():
@@ -143,7 +141,6 @@ if __name__ == "__main__":
         print("Processing " + country)
 
         try:
-
             # get entire revisions
             path_rev = path = f"countries/{country.lower()}/revisions.pbz2"
             revisions = fut.decompress_pickle(path)
@@ -190,4 +187,3 @@ if __name__ == "__main__":
     print("TOP 206")
     print(metrics.NDCG_score(real_rank, rank, 206))
     print("\n")
-
