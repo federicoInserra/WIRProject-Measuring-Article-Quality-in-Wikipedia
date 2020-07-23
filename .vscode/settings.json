@@ -4,6 +4,6 @@
     "python.linting.enabled": false,
     "python.formatting.provider": "autopep8",
     "python.linting.pylamaEnabled": true,
-    "python.pythonPath": "/opt/anaconda3/bin/python"
+    "python.pythonPath": "env\\Scripts\\python.exe"
 }
 

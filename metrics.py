@@ -70,5 +70,5 @@ def NDCG_score(real_rank, predict_rank, topK):
         total += score
 
     Z = calculate_Z(topK, real_rank, predict_rank)
-    print("THIS IS PERFECT SCORE", Z)
+    
     return total / Z

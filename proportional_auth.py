@@ -129,14 +129,16 @@ def calculate_rank(users_contributions):
         calculate_authorities(users_contributions)
         calculate_qualities(users_contributions)
 
-    rank_countries = sorted(docs_quality.items(), key=lambda x: x[1], reverse=True)
+    rank_countries = sorted(docs_quality.items(), key=lambda x: x[1], reverse=False)
 
     return rank_countries
 
 
 if __name__ == "__main__":
     
-    
+    with open("countries/uni")
+
+    """
     users_contributions = {}
     countries = fut.get_countries()
 
@@ -162,7 +164,7 @@ if __name__ == "__main__":
             pass
     
     fut.save_as_json("users_contributions", users_contributions)
-    
+    """
     f = open("users_contributions.json", "r", encoding="utf-8")
     users_contributions = json.load(f)
     f.close()

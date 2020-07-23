@@ -85,7 +85,7 @@ def calculate_scores(differences, users_score, revisions, country):
             else:
                 users_score[user] = {"added": [score], "removed": []}
 
-            list_of_users.append(user)  # lista di utenti che hanno revisionato il paese
+            
 
         except Exception as e:
             print(e)
@@ -202,11 +202,12 @@ if __name__ == "__main__":
     init_users_aut(users_score)
     init_doc_quality(countries_score)
 
-    for _ in range(10):
+    for _ in range(1):
         calculate_auth(users_score, countries_score)
         calculate_quality(countries_score, users_score)
 
-    rank_countries = sorted(docs_quality.items(), key=lambda x: x[1], reverse=True)
+    rank_countries = sorted(docs_quality.items(), key=lambda x: x[1], reverse=False)
+    #rank_countries.reverse()
 
     print("\n")
     print("-----------------  NDCG score  -------------")
