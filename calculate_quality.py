@@ -21,44 +21,42 @@ def gen_random():
 
 
 def init_doc_quality(countries):
-    
+
     for country in countries:
         docs_quality[country] = gen_random()
 
+
 def init_users_aut(users):
-    
-    for user in users:   
+
+    for user in users:
         users_aut[user] = gen_random()
 
 
 def check_words(added, revisions, i, reviewers):
-    
-    
-    
-    current_text = fut.filter_text(revisions[0]['text'])
+
+    current_text = fut.filter_text(revisions[0]["text"])
     review = {}
-         
-    survived_words = [ w for w in added if w in current_text ]
-        
-    
+
+    survived_words = [w for w in added if w in current_text]
+
     review["from"] = i
     review["survived_words"] = survived_words
-    review['contrib'] = len(survived_words) / len(current_text)
-    
+    review["contrib"] = len(survived_words) / len(current_text)
+
     return review
 
 
 def calculate_scores(differences, users_score, revisions, country):
-    
+
     reviewers = []
     for i in range(len(differences)):
-        
+
         try:
-            reviewers.append(revisions[-i - 1]['user'])
+            reviewers.append(revisions[-i - 1]["user"])
         except Exception as e:
             print(e)
             pass
-    
+
     i = 0
     while i < len(differences):
 
@@ -85,78 +83,69 @@ def calculate_scores(differences, users_score, revisions, country):
             else:
                 users_score[user] = {"added": [score], "removed": []}
 
-            
-
         except Exception as e:
             print(e)
             pass
 
         i += 1
-        
 
     return users_score, reviewers
 
 
-
 def calculate_auth(users_score, countries_score):
-    
+
     max_auth = 0
     auth = 0
     for user in users_score:
         for review in users_score[user]:
-            i = review['from']
-            country = review['country']
-            contrib = review['contrib']
+            i = review["from"]
+            country = review["country"]
+            contrib = review["contrib"]
 
             while i < len(countries_score[country]):
                 try:
                     auth += users_aut[countries_score[country][i]]
-                    
+
                 except Exception as e:
-                    
+
                     pass
-                i+= 1
-            
-            auth = ((auth/len(countries_score[country])) * contrib)
+                i += 1
+
+            auth = (auth / len(countries_score[country])) * contrib
 
         if auth > max_auth:
             max_auth = auth
-        
+
         users_aut[user] = auth
 
-    
     for user in users_aut:
-        users_aut[user] = users_aut[user]/ max_auth
-    
-    
+        users_aut[user] = users_aut[user] / max_auth
+
 
 def calculate_quality(countries_score, users_score):
-    
+
     contributions = {}
     max_quality = 0
     for user in users_score:
         for review in users_score[user]:
-            country = review['country']
-            contrib = review['contrib']
+            country = review["country"]
+            contrib = review["contrib"]
 
             if country in contributions:
-                contributions[country].append((user,contrib))
+                contributions[country].append((user, contrib))
             else:
-                contributions[country] = [(user,contrib)]
-    
-            
+                contributions[country] = [(user, contrib)]
 
     for country in contributions:
-        quality =  0
+        quality = 0
         for contrib in contributions[country]:
-            quality += users_aut[contrib[0]] * contrib[1] 
-        
+            quality += users_aut[contrib[0]] * contrib[1]
 
         if quality > max_quality:
             max_quality = quality
-        
+
         docs_quality[country] = quality
-    
+
     for country in docs_quality:
         docs_quality[country] = docs_quality[country] / max_quality
 
@@ -195,7 +184,7 @@ if __name__ == "__main__":
     """
     with open("users_score.json", "r", encoding="utf-8") as f:
         users_score = json.load(f)
-    
+
     with open("countries_score.json", "r", encoding="utf-8") as f:
         countries_score = json.load(f)
 
@@ -207,7 +196,7 @@ if __name__ == "__main__":
         calculate_quality(countries_score, users_score)
 
     rank_countries = sorted(docs_quality.items(), key=lambda x: x[1], reverse=False)
-    #rank_countries.reverse()
+    # rank_countries.reverse()
 
     print("\n")
     print("-----------------  NDCG score  -------------")
