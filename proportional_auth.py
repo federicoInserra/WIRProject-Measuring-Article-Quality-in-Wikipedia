@@ -70,7 +70,7 @@ def calculate_contributions(revisions, differences, country, users_contributions
                 users_contributions[user] = {country: contribution}
 
         except Exception as e:
-            print(e)
+            
             pass
 
         i += 1
@@ -154,7 +154,7 @@ if __name__ == "__main__":
             )
 
         except Exception as e:
-            print(e)
+            
             pass
 
     fut.save_as_json("users_contributions", users_contributions)

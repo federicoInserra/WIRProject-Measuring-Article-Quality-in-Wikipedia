@@ -1,11 +1,16 @@
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.svm import LinearSVC
-from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.metrics import (
+    classification_report,
+    confusion_matrix,
+    plot_confusion_matrix,
+)
 import file_utilities
 import json
 from sklearn.utils import shuffle
 import numpy as np
 from pathlib import Path
+import matplotlib.pyplot as plt
 
 
 def load_dataset():
@@ -34,7 +39,7 @@ if __name__ == "__main__":
         y = json.load(json_file)
     y = [*y.values()]
     # Splitting in Train and Test
-    print("Splitting Dataset") # 80/20
+    print("Splitting Dataset")  # 80/20
     data, y = shuffle(data, y, random_state=42)
     x_train = np.array(data[:164])
     x_test = np.array(data[42:])
@@ -49,7 +54,7 @@ if __name__ == "__main__":
         ngram_range=(1, 2),
         stop_words="english",
     )
-    print("Starting Vectorization #1")
+    print("Starting Vectorization")
     x_train = vectorizer.fit_transform(x_train)
     x_test = vectorizer.transform(x_test)
 
@@ -58,3 +63,22 @@ if __name__ == "__main__":
     y_pred = model.predict(x_test)
     print(confusion_matrix(y_test, y_pred))
     print(classification_report(y_test, y_pred))
+
+    # Plot non-normalized and normalized confusion matrix
+    titles_options = [
+        ("Confusion matrix, without normalization", None),
+        ("Normalized confusion matrix", "true"),
+    ]
+    for title, normalize in titles_options:
+        disp = plot_confusion_matrix(
+            model,
+            x_test,
+            y_test,
+            display_labels=["B", "C", "FA", "GA", "NOL"],
+            cmap=plt.cm.Blues,
+            normalize=normalize,
+        )
+        disp.ax_.set_title(title)
+
+        print(title)
+        print(disp.confusion_matrix)

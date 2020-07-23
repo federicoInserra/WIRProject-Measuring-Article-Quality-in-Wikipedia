@@ -44,12 +44,15 @@ def check_words(added, revisions, i, reviewers):
 def calculate_scores(differences, users_score, revisions, country):
 
     reviewers = []
+    last_rev = ""
     for i in range(len(differences)):
 
         try:
-            reviewers.append(revisions[-i - 1]["user"])
+            if last_rev != revisions[-i - 1]['user']:
+                reviewers.append(revisions[-i - 1]['user'])
+                last_rev = revisions[-i - 1]['user']
         except Exception as e:
-            print(e)
+            
             pass
 
     i = 0
@@ -71,12 +74,14 @@ def calculate_scores(differences, users_score, revisions, country):
 
             user = rev["user"]
 
-            score = new_check_diff(added, revisions, i)
+            review = check_words(added, revisions, i, reviewers)
+            review['country'] = country
 
-            if user in users_score:
-                users_score[user]["added"].append(score)
-            else:
-                users_score[user] = {"added": [score], "removed": []}
+            if len(review['survived_words']) > 0:
+                if user in users_score:
+                    users_score[user].append(review)
+                else:
+                    users_score[user] = [review]
 
         except Exception as e:
             print(e)
@@ -104,9 +109,10 @@ def calculate_auth(users_score, countries_score):
                 except Exception as e:
 
                     pass
-                i += 1
-
-            auth = (auth / len(countries_score[country])) * contrib
+                i+= 1
+            
+            auth = ((auth/len(countries_score[country])) * contrib)
+            
 
         if auth > max_auth:
             max_auth = auth
@@ -151,7 +157,7 @@ if __name__ == "__main__":
     data = json.load(f)
 
     countries = fut.get_countries()
-    """
+    
     users_score = {}
     countries_score = {}
 
@@ -171,12 +177,12 @@ if __name__ == "__main__":
             
 
         except Exception as e:
-            print(e)
+            
             pass
 
     fut.save_as_json(f"users_score", users_score)
     fut.save_as_json(f"countries_score", countries_score)
-    """
+   
     with open("users_score.json", "r", encoding="utf-8") as f:
         users_score = json.load(f)
 
@@ -191,6 +197,10 @@ if __name__ == "__main__":
         calculate_quality(countries_score, users_score)
 
     rank_countries = sorted(docs_quality.items(), key=lambda x: x[1], reverse=False)
+<<<<<<< HEAD
+=======
+    
+>>>>>>> 1a0b05b443a691e99d9cfc05d07ea54c6239a7d5
 
     print("\n")
     print("-----------------  NDCG score  -------------")
