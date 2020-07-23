@@ -135,35 +135,33 @@ def calculate_rank(users_contributions):
 
 
 if __name__ == "__main__":
-    
-    
 
     users_contributions = {}
     countries = fut.get_countries()
 
     for country in countries:
-        print("Processing "+ country)
-        
+        print("Processing " + country)
+
         try:
-            
+
             # get entire revisions
             path_rev = path = f"countries/{country.lower()}/revisions.pbz2"
             revisions = fut.decompress_pickle(path)
-            
 
             # get all the differences between revisions
             path_diff = f"countries/{country.lower()}/differences.pbz2"
             differences = fut.decompress_pickle(path_diff)
-            
 
-            users_contributions = calculate_contributions(revisions, differences, country, users_contributions)
-            
+            users_contributions = calculate_contributions(
+                revisions, differences, country, users_contributions
+            )
+
         except Exception as e:
             
             pass
-    
+
     fut.save_as_json("users_contributions", users_contributions)
-    
+
     f = open("users_contributions.json", "r", encoding="utf-8")
     users_contributions = json.load(f)
     f.close()

@@ -18,10 +18,10 @@ def save_as_json(filename, json_object):
     out_file.close()
 
 
-
 def compressed_pickle(title, data):
     with bz2.BZ2File(title + ".pbz2", "wb") as f:
         cPickle.dump(data, f, protocol=4)
+
 
 # Load any compressed pickle file
 def decompress_pickle(file):
